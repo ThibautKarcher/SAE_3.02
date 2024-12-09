@@ -3,6 +3,7 @@ import threading
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
+from pathlib import Path
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -11,6 +12,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Test")
         self.resize(700, 500)
         self.setCentralWidget(widget)
+        widget.setStyleSheet(Path('style.css').read_text())
 
         self.host_label = QLabel("Serveur :")
         self.host_value = QLineEdit("")
@@ -26,7 +28,7 @@ class MainWindow(QMainWindow):
         self.code_input = QTextEdit("")
         self.code_send = QPushButton("Executer")
         self.filler = QLabel("")
-        self.result_label = QLabel("Résultat :")
+        self.result_label = QLabel("Résultat en sortie :")
         self.code_output = QTextEdit("")
         self.close_button = QPushButton("Fermer")
 
@@ -40,11 +42,11 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.conn_state, 3, 0, 1, 2)
         grid.addWidget(self.code_label, 4, 0, 1, 2)
         grid.addWidget(self.code_input, 5, 0, 1, 2)
-        grid.addWidget(self.code_send, 6, 0, 1, 2)
+        grid.addWidget(self.code_send, 6, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
         grid.addWidget(self.filler, 7, 0, 1, 2)
         grid.addWidget(self.result_label, 8, 0, 1, 2)
         grid.addWidget(self.code_output, 9, 0, 1, 2)
-        grid.addWidget(self.close_button, 10, 0, 1, 2)
+        grid.addWidget(self.close_button, 10, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
 
 
     def connect(self):

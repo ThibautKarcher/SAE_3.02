@@ -1,0 +1,40 @@
+QWidget {
+    color: #FFFFFF;
+    background-color: qlineargradient(y1: 0, y2: 1, stop: 0 #191E29, stop: 0.30 #132D46 stop: 1 #01C38D );
+    font: bold 12px "Tahoma";
+}
+
+QLineEdit {
+    background-color: #191E29;
+    color: #01C38D;
+    font-style: bold;
+    border-radius: 10px;
+}
+
+QTextEdit {
+    background-color: #191E29;
+    color: #01C38D;
+    border-radius: 10px;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QPushButton {
+    background: transparent;
+    border-radius: 10px;
+    min-width: 140px; min-height: 40px; max-width: 140px; max-height: 40px;
+}
+
+QPushButton:hover {
+    background-color: #191E29;
+    border: 2px solid #01C38D;
+    box-shadow: ;
+}
+
+QComboBox {
+    background: transparent;
+    color: white;
+    border-radius: 10px;
+}
