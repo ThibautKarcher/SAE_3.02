@@ -8,6 +8,11 @@ QLineEdit {
     background-color: #191E29;
     color: #01C38D;
     font-style: bold;
+    border : 2px solid;
+    border-top-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #191E29, stop: 1 #01C38D );
+    border-left-color: #191E29;
+    border-bottom-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #191E29, stop: 1 #01C38D );
+    border-right-color: #191E29;
     border-radius: 10px;
 }
 
@@ -30,7 +35,6 @@ QPushButton {
 QPushButton:hover {
     background-color: #191E29;
     border: 2px solid #01C38D;
-    box-shadow: ;
 }
 
 QComboBox {
