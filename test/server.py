@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.port_value = QLineEdit("")
         self.port_value.setReadOnly(True)
         self.serv_state = QLabel("")
-        self.conn = QPushButton("Démarrer le serveur")
+        self.connect = QPushButton("Démarrer le serveur")
         self.host_list_label = QLabel("Liste des clients connectés :")
         self.host_list = QListWidget()
         self.slave_list_label = QLabel("Liste des serveurs esclaves disponibles :")
@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.host_label, 1, 0)
         grid.addWidget(self.host_value, 1, 1)
         grid.addWidget(self.serv_state, 2, 0, 1, 2)
-        grid.addWidget(self.conn, 3, 0, 1, 2)
+        grid.addWidget(self.connect, 3, 0, 1, 2)
         grid.addWidget(self.host_list_label, 4, 0)
         grid.addWidget(self.host_list, 5, 0, 1, 2)
         grid.addWidget(self.slave_list_label, 6, 0)
@@ -45,7 +45,38 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.output, 1, 2, 7, 2)
         grid.addWidget(self.close_window, 8, 3, 1, 1)
 
-        self.conn.clicked.connect(self.demarrage)
+        self.connect.clicked.connect(self.__demarrage)
+
+    def __demarrage(self):
+        self.connect.setText('Arrêt du serveur')
+        self.serv_state.setText('Serveur ON')
+        accept = threading.Thread(target = MainWindow.__accept, args=[self])
+        accept.start()
+
+    def __accept(self, port = 5555):
+        serveur_socket = socket.socket()
+        serveur_socket.bind(('0.0.0.0', port))
+        serveur_socket.listen()
+        print("Serveur démarré")
+        conn, address = serveur_socket.accept()
+        print(f"Connexion établie avec {address}")
+        MainWindow.reception(self, conn, serveur_socket)
+
+    def reception(self, conn, socket):
+         while True:
+            message = conn.recv(1024).decode()
+            if not message:
+                break
+            print(f"Nouveau message reçu : {message}")
+            if message == "deco-server":
+                reply = "Fin de la connexion"
+                conn.send(reply.encode())
+                print("Fin de la connexion avec le client")
+                conn.close()
+                socket.close()
+                #MainWindow.deconnection(self)
+                break
+
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+QTextEdit {
+    background-image: url("logo_python.png");
+    border-image: url("logo_python.png") 0 0 0 0 stretch stretch;
+}

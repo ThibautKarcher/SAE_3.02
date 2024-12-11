@@ -50,6 +50,10 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.close_button, 10, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.conn.clicked.connect(self.connect)
+        self.code_send.clicked.connect(self.envoi)
+
+        self.host_value.setText("127.0.0.1")
+        self.port_value.setText("5555")
 
     def connect(self):
         try :
@@ -69,13 +73,28 @@ class MainWindow(QMainWindow):
             self.conn.clicked.connect(self.disconnect)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
-
+            MainWindow.envoi(self, client_socket)
         except Exception as e:
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
             self.conn_state.setStyleSheet("color: red")
 
-    
+    def envoi(self, socket):
+        while True :
+            try :
+                message = self.code_input.toPlainText()
+                if not message :
+                    break
+                else :
+                    socket.send(message.encode())
+                    print(f"Message envoyé : {message}")
+                    reply = socket.recv(1024).decode()
+                    print(f"Réponse reçue : {reply}")
+                    self.code_output.setText(reply)
+            except Exception as e:
+                print(f"Erreur d'envoi : {e}")
+                break
+
 
 
 if __name__ == "__main__":
