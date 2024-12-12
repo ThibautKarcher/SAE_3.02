@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         MainWindow.reception(self, conn, serveur_socket)
 
     def reception(self, conn, socket):
-         while True:
+        while True:
             message = conn.recv(1024).decode()
             if not message:
                 break

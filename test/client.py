@@ -1,4 +1,5 @@
 import socket
+import threading
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
@@ -58,43 +59,39 @@ class MainWindow(QMainWindow):
     def connect(self):
         try :
             port = int(self.port_value.text())
-        except ValueError:
-            self.conn_state.setText("Le port doit être un nombre")
-            self.conn_state.setStyleSheet("color: red")
-            return
-        try :
-            client_socket = socket.socket()
-            self.conn_state.setText("Connexion en cours...")
-            self.conn_state.setStyleSheet("color: #FFA500")
-            client_socket.connect((self.host_value.text(), port))
+            self.client_socket = socket.socket()
+            self.client_socket.connect((self.host_value.text(), port))
+            print(type(self.client_socket))
             self.conn_state.setText("Connexion réussie")
             self.conn_state.setStyleSheet("color: #01C38D")
             self.conn.setText("Déconnexion")
             self.conn.clicked.connect(self.disconnect)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
-            MainWindow.envoi(self, client_socket)
+            self.thread_envoi = threading.Thread(target = self.envoi)
+            self.thread_envoi.start()
+
+        except ValueError:
+            self.conn_state.setText("Le port doit être un nombre")
+            self.conn_state.setStyleSheet("color: red")
+            return
+        
         except Exception as e:
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
             self.conn_state.setStyleSheet("color: red")
-
-    def envoi(self, socket):
-        while True :
-            try :
-                message = self.code_input.toPlainText()
-                if not message :
-                    break
-                else :
-                    socket.send(message.encode())
-                    print(f"Message envoyé : {message}")
-                    reply = socket.recv(1024).decode()
-                    print(f"Réponse reçue : {reply}")
-                    self.code_output.setText(reply)
-            except Exception as e:
-                print(f"Erreur d'envoi : {e}")
-                break
-
+    
+    
+    def envoi(self):
+        message = self.code_input.toPlainText()
+        print(message)
+        try :
+            self.client_socket.send(message.encode())
+            print(f"Message envoyé : {message}")
+            self.thread_envoi.join()
+                    
+        except Exception as e:
+            print(f"Erreur d'envoi : {e}")
 
 
 if __name__ == "__main__":
