@@ -1,6 +1,7 @@
 import sys
 import socket
 import threading
+import re
 from PyQt6.QtWidgets import *
 
 
@@ -59,23 +60,40 @@ class MainWindow(QMainWindow):
         serveur_socket.listen()
         print("Serveur démarré")
         conn, address = serveur_socket.accept()
+        addr = re.search(r"\d.*[.].[0-9]*", str(address))
+        str(addr)
+        print(addr)
         print(f"Connexion établie avec {address}")
-        MainWindow.reception(self, conn, serveur_socket)
+        with open('liste_serveur.txt', 'r') as serv:
+            if re.search(addr, serv.read()):
+                language_serv = re.search("", serv.read())
+                self.slave_list.addItem(f"{language_serv} : {address} connecté")
+            else :
+                i=1
+                self.host_list.addItem(f"Client{i} : {address} connecté")
+                i+=1
+        MainWindow.reception(self, conn, address)
 
-    def reception(self, conn, socket):
+    def reception(self, conn, address):
         while True:
             message = conn.recv(1024).decode()
             if not message:
                 break
-            print(f"Nouveau message reçu : {message}")
-            if message == "deco-server":
-                reply = "Fin de la connexion"
-                conn.send(reply.encode())
-                print("Fin de la connexion avec le client")
-                conn.close()
-                socket.close()
-                #MainWindow.deconnection(self)
-                break
+            else :
+                self.output.append(f"Message reçu de {address} : {message}")
+                print(f"Nouveau message reçu : {message}")
+
+    
+
+   # def definir_language(self, message):
+
+
+#A faire dans les serveurs slaves
+"""
+    def envoi_resultat(self, code):
+        with open('code.py') as code_fichier:       # explication fonction with : https://www.freecodecamp.org/news/with-open-in-python-with-statement-syntax-example/
+            code_fichier.write(code)
+"""      
 
 
 

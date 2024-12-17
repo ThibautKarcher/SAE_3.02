@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+import re
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from pathlib import Path
@@ -51,7 +52,7 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.close_button, 10, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.conn.clicked.connect(self.connect)
-        self.code_send.clicked.connect(self.envoi)
+        self.code_send.clicked.connect(self.detect_language)
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
@@ -68,7 +69,7 @@ class MainWindow(QMainWindow):
             self.conn.clicked.connect(self.disconnect)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
-            self.thread_envoi = threading.Thread(target = self.envoi)
+            self.thread_envoi = threading.Thread(target = self.detect_language, args=[self])
             self.thread_envoi.start()
 
         except ValueError:
@@ -80,10 +81,26 @@ class MainWindow(QMainWindow):
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
             self.conn_state.setStyleSheet("color: red")
-    
-    
-    def envoi(self):
+
+    def detect_language(self, message):
         message = self.code_input.toPlainText()
+        if re.search("printf", message):
+            language = "C"
+        elif re.search("System.out.println", message):
+            language = "Java"
+        elif re.search("cout", message):
+            language = "C++"
+        elif re.search("print", message):
+            language = "Python"
+        else :
+            language = "Inconnu"
+        print(language)
+        MainWindow.envoi(self, language, message)
+    
+    
+    def envoi(self, language, message):
+        print(message)
+        message = f"#{language} \n {message}"
         print(message)
         try :
             self.client_socket.send(message.encode())

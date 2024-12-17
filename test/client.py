@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         widget = QWidget()
-        self.setWindowTitle("Test")
+        self.setWindowTitle("Client")
         self.resize(700, 500)
         self.setCentralWidget(widget)
         widget.setStyleSheet(Path('style.css').read_text())
