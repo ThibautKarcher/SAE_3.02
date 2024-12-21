@@ -65,8 +65,11 @@ class MainWindow(QMainWindow):
         print(f"Connexion établie avec {address}")
         with open('liste_serveur.txt', 'r') as serv:
             lecture = serv.read()
-            match_addr = re.search(addr, lecture).group()
-            print(match_addr)
+            match_addr = re.search(addr, lecture)
+            if match_addr != None:
+                match_addr = match_addr.group()
+            else :
+                pass
             if addr == match_addr:
                 recherche_language_serv = re.findall(r"^Serveur (.*)\s\:[ ]?(.*[.].[0-9]*)", lecture)
                 language_serv = ""
@@ -82,7 +85,7 @@ class MainWindow(QMainWindow):
                 self.host_list.addItem(f"Client{i} : {addr} connecté")
                 i+=1
                 nature_equipement = "Client"
-        MainWindow.reception(self, conn, address, nature_equipement)
+        MainWindow.reception(self, conn, addr, nature_equipement)
 
     def reception(self, conn, address, nature_equipement):
         while True:
@@ -93,23 +96,15 @@ class MainWindow(QMainWindow):
                 self.output.append(f"Message reçu de {address} : {message}")
                 print(f"Nouveau message reçu : {message}")
                 if nature_equipement == "Client":
-                    MainWindow.definir_language(self, message)
+                    pass
+                    #MainWindow.definir_language(self, message)
                 elif nature_equipement == "Serveur":
-                    MainWindow.envoi(self, message)
+                    pass
+                    #MainWindow.envoi(self, message)
                 else :
                     raise Exception("Nature de l'équipement inconnue")
 
-    
-
-    #def definir_language(self, message):
-
-#A faire dans les serveurs slaves
-"""
-    def envoi_resultat(self, code):
-        with open('code.py') as code_fichier:       # explication fonction with : https://www.freecodecamp.org/news/with-open-in-python-with-statement-syntax-example/
-            code_fichier.write(code)
-"""      
-
+    #def send_to_slave(self, message):
 
 
 if __name__ == "__main__":

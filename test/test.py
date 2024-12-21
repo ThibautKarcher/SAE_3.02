@@ -27,6 +27,7 @@ class MainWindow(QMainWindow):
         self.choose_lang.addItem("C")
         self.choose_lang.addItem("Java")
         self.choose_lang.addItem("C++")
+        self.choose_lang.addItem("Texte")
         self.lang_status = QLabel("")
         self.code_label = QLabel("Inserez un code à executer :")
         self.code_input = QTextEdit("")
@@ -114,11 +115,18 @@ class MainWindow(QMainWindow):
         elif re.search("print", message):
             language = "Python"
             self.choose_lang.setCurrentText("Python")
+        elif message == "":
+            language = None
         else :
-
-            raise Exception("Langage non reconnu")
+            language = "Texte"
+            self.choose_lang.setCurrentText("Texte")
+            self.lang_status.setText("Langage non reconnu, votre code sera traité comme du texte, changer le langage si nécessaire")
+            self.lang_status.setStyleSheet("color: red")
         print(language)
-        MainWindow.envoi(self, language, message)
+        if self.choose_lang.currentText() == "--Selectionnez un langage--":
+            pass
+        else :
+            MainWindow.envoi(self, language, message)
     
     
     def envoi(self, language, message):
