@@ -60,21 +60,31 @@ class MainWindow(QMainWindow):
         serveur_socket.listen()
         print("Serveur démarré")
         conn, address = serveur_socket.accept()
-        addr = re.search(r"\d.*[.].[0-9]*", str(address))
-        str(addr)
+        addr = re.search(r"\d.*[.].[0-9]*", str(address)).group()
         print(addr)
         print(f"Connexion établie avec {address}")
         with open('liste_serveur.txt', 'r') as serv:
-            if re.search(addr, serv.read()):
-                language_serv = re.search("", serv.read())
-                self.slave_list.addItem(f"{language_serv} : {address} connecté")
+            lecture = serv.read()
+            match_addr = re.search(addr, lecture).group()
+            print(match_addr)
+            if addr == match_addr:
+                recherche_language_serv = re.findall(r"^Serveur (.*)\s\:[ ]?(.*[.].[0-9]*)", lecture)
+                language_serv = ""
+                for lang, ip in recherche_language_serv:
+                    if ip == addr:
+                        language_serv = lang
+                        break
+                print(language_serv)
+                self.slave_list.addItem(f" Serveur {language_serv} : {addr} connecté")
+                nature_equipement = "Serveur"
             else :
                 i=1
-                self.host_list.addItem(f"Client{i} : {address} connecté")
+                self.host_list.addItem(f"Client{i} : {addr} connecté")
                 i+=1
-        MainWindow.reception(self, conn, address)
+                nature_equipement = "Client"
+        MainWindow.reception(self, conn, address, nature_equipement)
 
-    def reception(self, conn, address):
+    def reception(self, conn, address, nature_equipement):
         while True:
             message = conn.recv(1024).decode()
             if not message:
@@ -82,11 +92,16 @@ class MainWindow(QMainWindow):
             else :
                 self.output.append(f"Message reçu de {address} : {message}")
                 print(f"Nouveau message reçu : {message}")
+                if nature_equipement == "Client":
+                    MainWindow.definir_language(self, message)
+                elif nature_equipement == "Serveur":
+                    MainWindow.envoi(self, message)
+                else :
+                    raise Exception("Nature de l'équipement inconnue")
 
     
 
-   # def definir_language(self, message):
-
+    #def definir_language(self, message):
 
 #A faire dans les serveurs slaves
 """

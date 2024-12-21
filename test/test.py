@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         widget = QWidget()
         self.setWindowTitle("Test")
-        self.resize(700, 500)
+        self.resize(900, 600)
         self.setCentralWidget(widget)
         widget.setStyleSheet(Path('style.css').read_text())
 
@@ -22,10 +22,12 @@ class MainWindow(QMainWindow):
         self.conn = QPushButton("Connexion")
         self.conn_state = QLabel("")
         self.choose_lang = QComboBox()
+        self.choose_lang.addItem("--Selectionnez un langage--")
         self.choose_lang.addItem("Python")
         self.choose_lang.addItem("C")
         self.choose_lang.addItem("Java")
         self.choose_lang.addItem("C++")
+        self.lang_status = QLabel("")
         self.code_label = QLabel("Inserez un code à executer :")
         self.code_input = QTextEdit("")
         self.code_send = QPushButton("Executer")
@@ -37,19 +39,20 @@ class MainWindow(QMainWindow):
 
         grid = QGridLayout()
         widget.setLayout(grid)
-        grid.addWidget(self.host_label, 0, 0, 1, 1)
-        grid.addWidget(self.host_value, 0, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
-        grid.addWidget(self.port_label, 1, 0, 1, 1)
-        grid.addWidget(self.port_value, 1, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self.host_label, 0, 0)
+        grid.addWidget(self.host_value, 0, 1, Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self.port_label, 1, 0)
+        grid.addWidget(self.port_value, 1, 1, Qt.AlignmentFlag.AlignLeft)
         grid.addWidget(self.conn, 2, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
-        grid.addWidget(self.conn_state, 3, 0, 1, 1)
-        grid.addWidget(self.choose_lang, 4, 0, 1, 1)
-        grid.addWidget(self.code_label, 5, 0, 1, 1)
-        grid.addWidget(self.code_input, 6, 0, 1, 1)
-        grid.addWidget(self.code_send, 7, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        grid.addWidget(self.result_label, 0, 2, 1, 1)
-        grid.addWidget(self.code_output, 1, 2, 1, 1)
-        grid.addWidget(self.close_button, 10, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self.conn_state, 3, 0, 1, 2)
+        grid.addWidget(self.choose_lang, 4, 0)
+        grid.addWidget(self.lang_status, 5, 0)
+        grid.addWidget(self.code_label, 6, 0)
+        grid.addWidget(self.code_input, 7, 0, 1, 2)
+        grid.addWidget(self.code_send, 8, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self.result_label, 0, 2, 1, 2)
+        grid.addWidget(self.code_output, 1, 2, 7, 2)
+        grid.addWidget(self.close_button, 8, 3, 1, 1)
 
         self.conn.clicked.connect(self.connect)
         self.code_send.clicked.connect(self.detect_language)
@@ -86,14 +89,19 @@ class MainWindow(QMainWindow):
         message = self.code_input.toPlainText()
         if re.search("printf", message):
             language = "C"
+            self.choose_lang.setCurrentText("C")
         elif re.search("System.out.println", message):
             language = "Java"
+            self.choose_lang.setCurrentText("Java")
         elif re.search("cout", message):
             language = "C++"
+            self.choose_lang.setCurrentText("C++")
         elif re.search("print", message):
             language = "Python"
+            self.choose_lang.setCurrentText("Python")
         else :
-            language = "Inconnu"
+
+            raise Exception("Langage non reconnu")
         print(language)
         MainWindow.envoi(self, language, message)
     
