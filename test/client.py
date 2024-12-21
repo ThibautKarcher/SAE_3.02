@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+import re
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from pathlib import Path
@@ -9,8 +10,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         widget = QWidget()
-        self.setWindowTitle("Client")
-        self.resize(700, 500)
+        self.setWindowTitle("Test")
+        self.resize(900, 600)
         self.setCentralWidget(widget)
         widget.setStyleSheet(Path('style.css').read_text())
 
@@ -21,11 +22,14 @@ class MainWindow(QMainWindow):
         self.conn = QPushButton("Connexion")
         self.conn_state = QLabel("")
         self.choose_lang = QComboBox()
+        self.choose_lang.addItem("--Selectionnez un langage--")
         self.choose_lang.addItem("Python")
         self.choose_lang.addItem("C")
         self.choose_lang.addItem("Java")
         self.choose_lang.addItem("C++")
+        self.lang_status = QLabel("")
         self.code_label = QLabel("Inserez un code à executer :")
+        self.import_file = QPushButton("Importer un fichier")
         self.code_input = QTextEdit("")
         self.code_send = QPushButton("Executer")
         self.filler = QLabel("")
@@ -36,25 +40,37 @@ class MainWindow(QMainWindow):
 
         grid = QGridLayout()
         widget.setLayout(grid)
-        grid.addWidget(self.host_label, 0, 0, 1, 1)
-        grid.addWidget(self.host_value, 0, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
-        grid.addWidget(self.port_label, 1, 0, 1, 1)
-        grid.addWidget(self.port_value, 1, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self.host_label, 0, 0)
+        grid.addWidget(self.host_value, 0, 1, Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self.port_label, 1, 0)
+        grid.addWidget(self.port_value, 1, 1, Qt.AlignmentFlag.AlignLeft)
         grid.addWidget(self.conn, 2, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
-        grid.addWidget(self.conn_state, 3, 0, 1, 1)
-        grid.addWidget(self.choose_lang, 4, 0, 1, 1)
-        grid.addWidget(self.code_label, 5, 0, 1, 1)
-        grid.addWidget(self.code_input, 6, 0, 1, 1)
-        grid.addWidget(self.code_send, 7, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        grid.addWidget(self.result_label, 0, 2, 1, 1)
-        grid.addWidget(self.code_output, 1, 2, 1, 1)
-        grid.addWidget(self.close_button, 10, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self.conn_state, 3, 0, 1, 2)
+        grid.addWidget(self.choose_lang, 4, 0)
+        grid.addWidget(self.lang_status, 5, 0)
+        grid.addWidget(self.code_label, 6, 0)
+        grid.addWidget(self.import_file, 7, 0, 1, 2)
+        grid.addWidget(self.code_input, 8, 0, 1, 2)
+        grid.addWidget(self.code_send, 9, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self.result_label, 0, 2, 1, 2)
+        grid.addWidget(self.code_output, 1, 2, 8, 2)
+        grid.addWidget(self.close_button, 9, 3, 1, 1)
 
         self.conn.clicked.connect(self.connect)
-        self.code_send.clicked.connect(self.envoi)
+        self.code_send.clicked.connect(self.detect_language)
+        self.import_file.clicked.connect(self.inserer_fichier)
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
+      
+    def inserer_fichier(self):
+        fichier = QFileDialog(self)
+        fichier.setFileMode(QFileDialog.FileMode.ExistingFile)
+        fichier.setNameFilter("Fichiers texte (*.txt);;Fichiers Python (*.py);;Fichiers Java (*.java);;Fichiers C (*.c);;Fichiers C++ (*.cpp *.cc)")
+        if fichier.exec():
+            code_importer = fichier.selectedFiles()
+            with open(code_importer, 'r') as file:
+                self.code_input.setText(file.read())
 
     def connect(self):
         try :
@@ -68,7 +84,7 @@ class MainWindow(QMainWindow):
             self.conn.clicked.connect(self.disconnect)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
-            self.thread_envoi = threading.Thread(target = self.envoi)
+            self.thread_envoi = threading.Thread(target = self.detect_language, args=[self])
             self.thread_envoi.start()
 
         except ValueError:
@@ -80,10 +96,31 @@ class MainWindow(QMainWindow):
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
             self.conn_state.setStyleSheet("color: red")
-    
-    
-    def envoi(self):
+
+    def detect_language(self, message):
         message = self.code_input.toPlainText()
+        if re.search("printf", message):
+            language = "C"
+            self.choose_lang.setCurrentText("C")
+        elif re.search("System.out.println", message):
+            language = "Java"
+            self.choose_lang.setCurrentText("Java")
+        elif re.search("cout", message):
+            language = "C++"
+            self.choose_lang.setCurrentText("C++")
+        elif re.search("print", message):
+            language = "Python"
+            self.choose_lang.setCurrentText("Python")
+        else :
+
+            raise Exception("Langage non reconnu")
+        print(language)
+        MainWindow.envoi(self, language, message)
+    
+    
+    def envoi(self, language, message):
+        print(message)
+        message = f"#{language} \n {message}"
         print(message)
         try :
             self.client_socket.send(message.encode())

@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         self.lang_status = QLabel("")
         self.code_label = QLabel("Inserez un code à executer :")
         self.code_input = QTextEdit("")
+        self.import_file = QPushButton("Importer un fichier")
         self.code_send = QPushButton("Executer")
         self.filler = QLabel("")
         self.result_label = QLabel("Résultat en sortie :")
@@ -49,16 +50,30 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.lang_status, 5, 0)
         grid.addWidget(self.code_label, 6, 0)
         grid.addWidget(self.code_input, 7, 0, 1, 2)
-        grid.addWidget(self.code_send, 8, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(self.import_file, 8, 0, 1, 2)
+        grid.addWidget(self.code_send, 9, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
         grid.addWidget(self.result_label, 0, 2, 1, 2)
-        grid.addWidget(self.code_output, 1, 2, 7, 2)
-        grid.addWidget(self.close_button, 8, 3, 1, 1)
+        grid.addWidget(self.code_output, 1, 2, 8, 2)
+        grid.addWidget(self.close_button, 9, 3, 1, 1)
 
         self.conn.clicked.connect(self.connect)
         self.code_send.clicked.connect(self.detect_language)
+        self.import_file.clicked.connect(self.inserer_fichier)
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
+
+    def inserer_fichier(self):              # https://www.pythontutorial.net/pyqt/pyqt-qfiledialog/
+        fichier = QFileDialog.getOpenFileName(
+            self,
+            "Ouvrir un fichier",
+            "",
+            "Fichier texte (*.txt);; Python (*.py);; C (*.c);; Java (*.java);; C++ (*.cpp)"
+        )
+        if fichier :
+            fichier = fichier[0]
+            with open(fichier, 'r') as file:
+                self.code_input.setText(file.read())
 
     def connect(self):
         try :
