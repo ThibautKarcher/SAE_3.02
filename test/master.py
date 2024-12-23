@@ -46,15 +46,15 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.output, 1, 2, 7, 2)
         grid.addWidget(self.close_window, 8, 3, 1, 1)
 
-        self.connect.clicked.connect(self.__demarrage)
+        self.connect.clicked.connect(self.demarrage)
 
-    def __demarrage(self):
+    def demarrage(self):
         self.connect.setText('Arrêt du serveur')
         self.serv_state.setText('Serveur ON')
-        accept = threading.Thread(target = MainWindow.__accept, args=[self])
+        accept = threading.Thread(target = MainWindow.accept, args=[self])
         accept.start()
 
-    def __accept(self, port = 5555):
+    def accept(self, port = 5555):
         serveur_socket = socket.socket()
         serveur_socket.bind(('0.0.0.0', port))
         serveur_socket.listen()
@@ -79,32 +79,85 @@ class MainWindow(QMainWindow):
                         break
                 print(language_serv)
                 self.slave_list.addItem(f" Serveur {language_serv} : {addr} connecté")
-                nature_equipement = "Serveur"
+                if language_serv == "C":
+                    self.serv_C = addr
+                else :
+                    self.serv_C = None
+                if language_serv == "Java":
+                    self.serv_Java = addr
+                else :
+                    self.serv_Java = None
+                if language_serv == "C++":
+                    self.serv_Cpp = addr
+                else :
+                    self.serv_Cpp = None
+                if language_serv == "Python":
+                    self.serv_Python = addr
+                else :
+                    self.serv_Python = None
+                self.nature_equipement = "Serveur"
             else :
                 i=1
                 self.host_list.addItem(f"Client{i} : {addr} connecté")
                 i+=1
-                nature_equipement = "Client"
-        MainWindow.reception(self, conn, addr, nature_equipement)
+                self.nature_equipement = "Client"
+        MainWindow.reception(self, conn, addr)
 
-    def reception(self, conn, address, nature_equipement):
+    def reception(self, conn, address):
         while True:
             message = conn.recv(1024).decode()
             if not message:
                 break
             else :
-                self.output.append(f"Message reçu de {address} : {message}")
+                self.output.append(f"Message reçu de {address} :\n{message}")
                 print(f"Nouveau message reçu : {message}")
-                if nature_equipement == "Client":
-                    pass
-                    #MainWindow.definir_language(self, message)
-                elif nature_equipement == "Serveur":
-                    pass
-                    #MainWindow.envoi(self, message)
-                else :
-                    raise Exception("Nature de l'équipement inconnue")
+                try :
+                    MainWindow.definir_language(self, message)
+                except Exception as e:
+                    print(f"Erreur : {e}")
+                    self.output.append(f"Erreur : {e}")
 
-    #def send_to_slave(self, message):
+    def definir_language(self, message):
+        try :
+            if re.search("printf", message):
+                language = "C"
+            elif re.search("System.out.println", message):
+                language = "Java"
+            elif re.search("cout", message):
+                language = "C++"
+            elif re.search("print", message):
+                language = "Python"
+        except Exception as e:
+            print(f"Language non reconnu: {e}")
+            self.output.append(f"Erreur : Langage non reconnu")
+        MainWindow.send_to_slave(self, message, language)
+            
+    def send_to_slave(self, message, language):
+        print("send to slave")
+        print(language)
+        print(message)
+        print(self.serv_C)
+        print(self.serv_Java)
+        print(self.serv_Cpp)
+        print(self.serv_Python)
+        print("end send to slave")
+
+        try :
+            if language == "C":
+                self.slave_socket = socket.socket()
+                self.slave_socket.connect((self.serv_C, 3333))
+            elif language == "Java":
+                self.slave_socket = socket.socket()
+                self.slave_socket.connect((self.serv_Java, 4444))
+            elif language == "C++":
+                self.slave_socket = socket.socket()
+                self.slave_socket.connect((self.serv_Cpp, 2222))
+            elif language == "Python":
+                self.slave_socket = socket.socket()
+                self.slave_socket.connect((self.serv_Python, 1111))
+        except Exception as e:
+            print(f"Erreur de connexion : {e}")
+
 
 
 if __name__ == "__main__":

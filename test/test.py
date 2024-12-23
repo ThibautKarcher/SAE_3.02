@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
             self.conn_state.setText("Connexion réussie")
             self.conn_state.setStyleSheet("color: #01C38D")
             self.conn.setText("Déconnexion")
-            self.conn.clicked.connect(self.disconnect)
+            self.conn.clicked.connect(self.deconnexion)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
             self.thread_envoi = threading.Thread(target = self.detect_language, args=[self])
@@ -106,15 +106,23 @@ class MainWindow(QMainWindow):
         if re.search("printf", message):
             language = "C"
             self.choose_lang.setCurrentText("C")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("System.out.println", message):
             language = "Java"
             self.choose_lang.setCurrentText("Java")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("cout", message):
             language = "C++"
             self.choose_lang.setCurrentText("C++")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("print", message):
             language = "Python"
             self.choose_lang.setCurrentText("Python")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif message == "":
             language = None
         else :
@@ -123,24 +131,34 @@ class MainWindow(QMainWindow):
             self.lang_status.setText("Langage non reconnu, votre code sera traité comme du texte, changer le langage si nécessaire")
             self.lang_status.setStyleSheet("color: red")
         print(language)
-        if self.choose_lang.currentText() == "--Selectionnez un langage--":
-            pass
-        else :
-            MainWindow.envoi(self, language, message)
     
     
-    def envoi(self, language, message):
-        print(message)
-        message = f"#{language} \n {message}"
-        print(message)
+    def envoi(self, message):
         try :
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
             self.thread_envoi.join()
-                    
+            #MainWindow.reponse(self)
         except Exception as e:
             print(f"Erreur d'envoi : {e}")
 
+    def reponse(self):
+        while True:
+            resultat = self.client_socket.recv(1024).decode()
+            if not resultat:
+                break
+            else :
+                self.code_output.append(resultat)
+                print(f"Resultat du code : {resultat}")
+
+    def deconnexion(self):
+        self.client_socket.close()
+        self.conn_state.setText("Déconnecté")
+        self.conn_state.setStyleSheet("color: red")
+        self.conn.setText("Connexion")
+        self.conn.clicked.connect(self.connect)
+        self.port_value.setReadOnly(False)
+        self.host_value.setReadOnly(False)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
