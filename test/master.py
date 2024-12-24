@@ -4,9 +4,9 @@ import threading
 import re
 from PyQt6.QtWidgets import *
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
+        self.nbr_client = 0
         super().__init__()
         widget = QWidget()
         self.setWindowTitle("Serveur maitre")
@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
         self.host_label = QLabel("Nombre de clients connectés :")
-        self.host_value = QLineEdit("")
+        self.host_value = QLineEdit(str(self.nbr_client))
         self.host_value.setReadOnly(True)
         self.port_label = QLabel("Port ouvert pour connexion clients :")
         self.port_value = QLineEdit("")
@@ -51,36 +51,42 @@ class MainWindow(QMainWindow):
     def demarrage(self):
         self.connect.setText('Arrêt du serveur')
         self.serv_state.setText('Serveur ON')
-        accept = threading.Thread(target = MainWindow.accept, args=[self])
-        accept.start()
-
-    def accept(self, port = 5555):
         serveur_socket = socket.socket()
-        serveur_socket.bind(('0.0.0.0', port))
+        serveur_socket.bind(('0.0.0.0', 5555))
         serveur_socket.listen()
         print("Serveur démarré")
-        conn, address = serveur_socket.accept()
+        self.port_value.setText("5555")
+        self.accept_thread = threading.Thread(target = MainWindow.accept, args=[self, serveur_socket])
+        self.accept_thread.start()
+
+    def accept(self, serveur_socket):
+        while True:
+            conn, address = serveur_socket.accept()
+            print(f"Connexion établie avec {address}")
+            multi_client_thread = threading.Thread(target=MainWindow.nature_equipement, args=[self, conn, address])
+            multi_client_thread.start()
+
+    def nature_equipement(self, conn, address):
         addr = re.search(r"\d.*[.].[0-9]*", str(address)).group()
-        print(addr)
-        print(f"Connexion établie avec {address}")
         with open('liste_serveur.txt', 'r') as serv:
             lecture = serv.read()
             match_addr = re.search(addr, lecture)
             if match_addr != None:
                 match_addr = match_addr.group()
-            else :
+            else:
                 pass
             if addr == match_addr:
-                recherche_language_serv = re.findall(r"^Serveur (.*)\s\:[ ]?(.*[.].[0-9]*)", lecture)
+                recherche_language_serv = re.findall(r"Serveur (.*)\s\:[ ]?(.*[.].[0-9]*)", lecture)
+                print(recherche_language_serv)
                 language_serv = ""
                 for lang, ip in recherche_language_serv:
                     if ip == addr:
                         language_serv = lang
                         break
                 print(language_serv)
-                self.slave_list.addItem(f" Serveur {language_serv} : {addr} connecté")
+                self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
-                    self.serv_C = addr
+                        self.serv_C = addr
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
@@ -95,30 +101,32 @@ class MainWindow(QMainWindow):
                     self.serv_Python = addr
                 else :
                     self.serv_Python = None
-                self.nature_equipement = "Serveur"
+                #self.host = "Serveur"
             else :
-                i=1
-                self.host_list.addItem(f"Client{i} : {addr} connecté")
-                i+=1
-                self.nature_equipement = "Client"
-        MainWindow.reception(self, conn, addr)
+                self.nbr_client += 1
+                self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
+                self.host_value.setText(str(self.nbr_client))
+                #self.host = "Client"
+        MainWindow.reception(self, conn, address)
 
     def reception(self, conn, address):
         while True:
             message = conn.recv(1024).decode()
             if not message:
                 break
-            else :
+            else:
                 self.output.append(f"Message reçu de {address} :\n{message}")
                 print(f"Nouveau message reçu : {message}")
-                try :
+                try:
                     MainWindow.definir_language(self, message)
                 except Exception as e:
                     print(f"Erreur : {e}")
                     self.output.append(f"Erreur : {e}")
 
+        conn.close()    # A voir si vraiment utile ou a deplacer
+
     def definir_language(self, message):
-        try :
+        try:
             if re.search("printf", message):
                 language = "C"
             elif re.search("System.out.println", message):
@@ -131,17 +139,34 @@ class MainWindow(QMainWindow):
             print(f"Language non reconnu: {e}")
             self.output.append(f"Erreur : Langage non reconnu")
         MainWindow.send_to_slave(self, message, language)
-            
+
     def send_to_slave(self, message, language):
         print("send to slave")
         print(language)
         print(message)
-        print(self.serv_C)
-        print(self.serv_Java)
-        print(self.serv_Cpp)
-        print(self.serv_Python)
         print("end send to slave")
+        try:
+            if language == "Python":
+                print("Python")
+                
+        except Exception as e:
+            print(f"Erreur d'envoi au serveur esclave : {e}")
 
+# Exemple d'utilisation
+if __name__ == "__main__":
+    app = QApplication([])
+    Window = MainWindow()
+    Window.show()
+    app.exec()
+
+
+# A implementer et modif
+    """
+    def send_to_slave(self, message, language):
+        print("send to slave")
+        print(language)
+        print(message)
+        print("end send to slave")
         try :
             if language == "C":
                 self.slave_socket = socket.socket()
@@ -157,11 +182,5 @@ class MainWindow(QMainWindow):
                 self.slave_socket.connect((self.serv_Python, 1111))
         except Exception as e:
             print(f"Erreur de connexion : {e}")
-
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    Window = MainWindow()
-    Window.show()
-    app.exec()
+    
+    """

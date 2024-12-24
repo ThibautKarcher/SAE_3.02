@@ -81,7 +81,6 @@ class MainWindow(QMainWindow):
             port = int(self.port_value.text())
             self.client_socket = socket.socket()
             self.client_socket.connect((self.host_value.text(), port))
-            print(type(self.client_socket))
             self.conn_state.setText("Connexion réussie")
             self.conn_state.setStyleSheet("color: #01C38D")
             self.conn.setText("Déconnexion")
