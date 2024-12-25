@@ -94,7 +94,9 @@ class MainWindow(QMainWindow):
             self.conn_state.setText("Le port doit être un nombre")
             self.conn_state.setStyleSheet("color: red")
             return
-        
+        except ConnectionRefusedError:
+            self.conn_state.setText("Connexion refusée")
+            self.conn_state.setStyleSheet("color: red")
         except Exception as e:
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")

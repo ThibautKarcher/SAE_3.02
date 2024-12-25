@@ -17,8 +17,7 @@ class MainWindow(QMainWindow):
         self.host_value = QLineEdit(str(self.nbr_client))
         self.host_value.setReadOnly(True)
         self.port_label = QLabel("Port ouvert pour connexion clients :")
-        self.port_value = QLineEdit("")
-        self.port_value.setReadOnly(True)
+        self.port_value = QLineEdit("5555")
         self.serv_state = QLabel("")
         self.connect = QPushButton("Démarrer le serveur")
         self.host_list_label = QLabel("Liste des clients connectés :")
@@ -51,11 +50,11 @@ class MainWindow(QMainWindow):
     def demarrage(self):
         self.connect.setText('Arrêt du serveur')
         self.serv_state.setText('Serveur ON')
+        port = int(self.port_value.text())
         serveur_socket = socket.socket()
-        serveur_socket.bind(('0.0.0.0', 5555))
+        serveur_socket.bind(('0.0.0.0', port))
         serveur_socket.listen()
         print("Serveur démarré")
-        self.port_value.setText("5555")
         self.accept_thread = threading.Thread(target = MainWindow.accept, args=[self, serveur_socket])
         self.accept_thread.start()
 
@@ -86,7 +85,7 @@ class MainWindow(QMainWindow):
                 print(language_serv)
                 self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
-                        self.serv_C = addr
+                    self.serv_C = addr
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
@@ -123,7 +122,7 @@ class MainWindow(QMainWindow):
                     print(f"Erreur : {e}")
                     self.output.append(f"Erreur : {e}")
 
-        conn.close()    # A voir si vraiment utile ou a deplacer
+        #conn.close()    # A voir si vraiment utile ou a deplacer
 
     def definir_language(self, message):
         try:
@@ -147,8 +146,17 @@ class MainWindow(QMainWindow):
         print("end send to slave")
         try:
             if language == "Python":
-                print("Python")
-                
+                if self.serv_Python != None:
+                    self.slave_socket = socket.socket()
+                    self.slave_socket.connect((self.serv_Python, 1111))
+                    self.slave_socket.send(message.encode(message))
+                    print(f"Message envoyé au serveur Python : {message}")
+                    output = self.slave_socket.recv(1024).decode()
+                    print(f"Réponse du serveur Python : {output}")
+                    self.output.append(f"Résultat du code envoyé : {output}")
+                else:
+                    self.output.append("Aucun serveur Python connecté, compilation du code impossible")
+                  
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
 
