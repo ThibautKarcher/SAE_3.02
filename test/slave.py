@@ -98,14 +98,15 @@ class MainWindow(QMainWindow):
                 self.output_value.append(resultat.stdout)
         elif self.lang_slave_value.currentText() == "C":
             with open('code.c','w') as code_fichier:
-                code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.c'], capture_output=True, text=True)
+                code_fichier.write(code)        #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
+                subprocess.run('g++', '-o', 'code', 'code.c')
+                resultat = subprocess.run(['./code'], capture_output=True, text=True)
                 print(resultat.stdout)
                 self.output_value.append(resultat.stdout)
         elif self.lang_slave_value.currentText() == "C++":
-            with open('code.cpp','w') as code_fichier:
+            with open('code.cpp') as code_fichier:
                 code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.cpp'], capture_output=True, text=True)
+                subprocess.run([sys.executable], capture_output=True, text=True)
                 print(resultat.stdout)
                 self.output_value.append(resultat.stdout)
             with open('code.cc','w') as code_fichier:
@@ -129,6 +130,12 @@ class MainWindow(QMainWindow):
         print("Résultat envoyé")
         print(code)
         self.envoi_thread.join()
+
+    def deconnexion(self):
+        self.slave_socket.close()
+        self.serv_state.setText("Déconnection réussie")
+        self.start.setText("Démarrage du serveur et connexion au serveur maitre")
+        self.start.clicked.connect(self.connection)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

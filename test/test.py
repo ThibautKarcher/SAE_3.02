@@ -60,6 +60,7 @@ class MainWindow(QMainWindow):
         self.conn.clicked.connect(self.connect)
         self.code_send.clicked.connect(self.detect_language)
         self.import_file.clicked.connect(self.inserer_fichier)
+        self.close_button.clicked.connect(self.close)               # Permet la fermeture de la fenêtre
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
