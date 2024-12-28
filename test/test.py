@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
             self.thread_envoi.join()
-            #MainWindow.reponse(self)
+            MainWindow.reponse(self)
         except Exception as e:
             print(f"Erreur d'envoi : {e}")
 

@@ -1,0 +1,7 @@
+print(psutil.cpu_percent())
+                if psutil.cpu_percent() >= 50:
+                    self.serv_state.setText("Impossible de compiler plus de programmes, CPU surchargé")
+                    self.serv_state.setStyleSheet("color: red")
+                    message_erreur = "CPU surchargé"
+                    self.slave_socket.send(message_erreur.encode())
+                else:

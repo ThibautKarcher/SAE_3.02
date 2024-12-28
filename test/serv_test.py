@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
                 if self.serv_Python != None:
                     self.serv_Python.send(message.encode())
                     print(f"Message envoyé au serveur Python : {message}")
-                    output = self.slave_socket.recv(1024).decode()
+                    output = self.serv_Python.recv(1024).decode()
                     print(f"Réponse du serveur Python : {output}")
                     self.output.append(f"Résultat du code envoyé : {output}")
                 else:

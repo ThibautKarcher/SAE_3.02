@@ -1,6 +1,7 @@
 import os
+import sys
 import subprocess
 
-subprocess.run(['g++', '-o', 'code', 'hi.c'])
-resultat = subprocess.run(['./code'], capture_output=True, text=True)
+resultat = subprocess.run([sys.executable, 'code.py'], capture_output=True, text=True)
+print(resultat)
 print(resultat.stdout)

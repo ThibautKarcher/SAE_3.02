@@ -1,4 +1,5 @@
 import sys
+import os
 import socket
 import threading
 import subprocess
@@ -51,7 +52,7 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.output_value, 1, 2, 11, 2)
         grid.addWidget(self.close_button, 13, 3, 1, 1)
 
-        self.host_value.setText('127.0.0.1')
+        self.host_value.setText('192.168.1.16')
         self.port_value.setText('5555')
 
         self.start.clicked.connect(self.connection)
@@ -89,59 +90,38 @@ class MainWindow(QMainWindow):
             if not code:
                 break
             else :
-                print(psutil.cpu_percent())
-                if psutil.cpu_percent() >= 50:
-                    self.serv_state.setText("Impossible de compiler plus de programmes, CPU surchargé")
-                    self.serv_state.setStyleSheet("color: red")
-                    message_erreur = "CPU surchargé"
-                    self.slave_socket.send(message_erreur.encode())
-                else:
-                    self.input_value.append(code)
-                    self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
-                    self.compilation_thread.start()
-        self.receive_thread.join()
+                self.input_value.append(code)
+                self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
+                self.compilation_thread.start()
     
     def compilation(self, code):
-        if self.lang_slave_value.currentText() == "Python":
-            with open('code.py', 'w') as code_fichier:
-                code_fichier.write(code)
+        try:
+            if self.lang_slave_value.currentText() == "Python":
+                print("compilation python")
+                with open('code.py', 'w') as code_fichier:
+                    code_fichier.write(code)
                 resultat = subprocess.run([sys.executable, 'code.py'], capture_output=True, text=True)
+                print(resultat)
                 print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-        elif self.lang_slave_value.currentText() == "C":
-            with open('code.c','w') as code_fichier:
-                code_fichier.write(code)        #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
-                subprocess.run('g++', '-o', 'code', 'code.c')
-                resultat = subprocess.run(['./code'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-        elif self.lang_slave_value.currentText() == "C++":
-            with open('code.cpp') as code_fichier:
-                code_fichier.write(code)
-                subprocess.run([sys.executable], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-            with open('code.cc','w') as code_fichier:
-                code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.cc'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-        elif self.lang_slave_value.currentText() == "Java":
-            with open('code.java','w') as code_fichier:
-                code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.java'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-        else:
-            self.serv_state.setText("Langage non reconnu")
-        self.compilation_thread.join()
-        self.envoi_thread = threading.Thread(target = MainWindow.envoi_resultat, args=[self, resultat.stdout])
+                print("Résultat compilé")
+            else:
+                self.serv_state.setText("Langage non reconnu")
+            self.envoi_resultat(resultat.stdout)
+        except Exception as e:
+            print(f"Erreur de compilation : {e}")
+            self.output_value.append(f"Erreur de compilation : {e}")
 
     def envoi_resultat(self, code):
-        self.slave_socket.send(code.encode())
-        print("Résultat envoyé")
+        print("Envoi du résultat")
         print(code)
-        self.envoi_thread.join()
+        try:
+            print("yep")
+            self.slave_socket.send(code.encode())
+            print("Résultat envoyé")
+            print(code)
+        except Exception as e:
+            print(f"Erreur d'envoi du résultat : {e}")
+            self.output_value.append(f"Erreur d'envoi du résultat : {e}")
 
     def deconnexion(self):
         self.slave_socket.close()
@@ -155,3 +135,31 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
+
+
+'''
+elif self.lang_slave_value.currentText() == "C":
+                with open('code.c','w') as code_fichier:
+                    code_fichier.write(code)        #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
+                subprocess.run('g++', '-o', 'code', 'code.c')
+                resultat = subprocess.run(['./code'], capture_output=True, text=True)
+                print(resultat.stdout)
+                self.output_value.append(resultat.stdout)
+            elif self.lang_slave_value.currentText() == "C++":
+                with open('code.cpp') as code_fichier:
+                    code_fichier.write(code)
+                subprocess.run([sys.executable], capture_output=True, text=True)
+                print(resultat.stdout)
+                self.output_value.append(resultat.stdout)
+                with open('code.cc','w') as code_fichier:
+                    code_fichier.write(code)
+                resultat = subprocess.run([sys.executable, 'code.cc'], capture_output=True, text=True)
+                print(resultat.stdout)
+                self.output_value.append(resultat.stdout)
+            elif self.lang_slave_value.currentText() == "Java":
+                with open('code.java','w') as code_fichier:
+                    code_fichier.write(code)
+                resultat = subprocess.run([sys.executable, 'code.java'], capture_output=True, text=True)
+                print(resultat.stdout)
+                self.output_value.append(resultat.stdout)
+'''

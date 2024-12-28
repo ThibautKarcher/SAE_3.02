@@ -96,7 +96,8 @@ class MainWindow(QMainWindow):
                 print(language_serv)
                 self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
-                    self.serv_C = self.serveur_socket
+                    self.serv_C = conn, address
+                    print(self.serv_C)
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
@@ -108,10 +109,12 @@ class MainWindow(QMainWindow):
                 else :
                     self.serv_Cpp = None
                 if language_serv == "Python":
-                    self.serv_Python = self.serveur_socket
+                    print("Python here")
+                    self.serv_Python = conn
+                    print(self.serv_Python)
                 else :
                     self.serv_Python = None
-                #self.host = "Serveur"
+                self.host = "Serveur"
             else :
                 self.nbr_client += 1
                 self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
@@ -120,26 +123,29 @@ class MainWindow(QMainWindow):
                 self.serv_Java = None
                 self.serv_Cpp = None
                 self.serv_Python = None
-                #self.host = "Client"
+                self.host = "Client"
         MainWindow.reception(self, conn, address)
 
     def reception(self, conn, address):
         while True:
-            message = conn.recv(1024).decode()
-            if not message:
-                break
+            if self.host == "Client":
+                message = conn.recv(1024).decode()
+                if not message:
+                    break
+                else:
+                    self.output.append(f"Message reçu de {address} :\n{message}")
+                    print(f"Nouveau message reçu : {message}")
+                    try:
+                        MainWindow.definir_language(self, message, conn)
+                    except Exception as e:
+                        print(f"Erreur : {e}")
+                        self.output.append(f"Erreur : {e}")
             else:
-                self.output.append(f"Message reçu de {address} :\n{message}")
-                print(f"Nouveau message reçu : {message}")
-                try:
-                    MainWindow.definir_language(self, message)
-                except Exception as e:
-                    print(f"Erreur : {e}")
-                    self.output.append(f"Erreur : {e}")
+                break
 
         #conn.close()    # A voir si vraiment utile ou a deplacer
 
-    def definir_language(self, message):
+    def definir_language(self, message, conn):
         try:
             if re.search("printf", message):
                 language = "C"
@@ -152,27 +158,43 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Language non reconnu: {e}")
             self.output.append(f"Erreur : Langage non reconnu")
-        MainWindow.send_to_slave(self, message, language)
+        MainWindow.send_to_slave(self, message, language, conn)
 
-    def send_to_slave(self, message, language):
+    def send_to_slave(self, message, language, conn):
         print("send to slave")
         print(language)
         print(message)
         print("end send to slave")
         try:
             if language == "Python":
+                print("Python here too")
+                print(self.serv_Python)
+                print(type(self.serv_Python))
+                print("no more")
                 if self.serv_Python != None:
                     self.serv_Python.send(message.encode())
                     print(f"Message envoyé au serveur Python : {message}")
-                    output = self.slave_socket.recv(1024).decode()
+                    output = self.serv_Python.recv(1024).decode()
                     print(f"Réponse du serveur Python : {output}")
                     self.output.append(f"Résultat du code envoyé : {output}")
+                    self.send_result_to_client(output, conn)
                 else:
                     self.output.append("Aucun serveur Python connecté, compilation du code impossible")
                     print("Aucun serveur Python connecté")
                   
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
+
+    def send_result_to_client(self, message, conn):
+        print("send result to client")
+        print(message)
+        print("end send result to client")
+        try:
+            conn.send(message.encode())
+            print(f"Message envoyé au client : {message}")
+        except Exception as e:
+            print(f"Erreur d'envoi au client : {e}")
+
 
     def deconnexion(self):
         self.connect.setText('Démarrer le serveur')
