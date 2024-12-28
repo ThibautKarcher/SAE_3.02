@@ -137,6 +137,8 @@ class MainWindow(QMainWindow):
     
     def envoi(self, message):
         try :
+            print(self.client_socket)
+            print(type(self.client_socket))
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
             self.thread_envoi.join()

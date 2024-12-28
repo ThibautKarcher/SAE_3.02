@@ -2,6 +2,7 @@ import sys
 import socket
 import threading
 import subprocess
+import psutil
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 
@@ -43,16 +44,18 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.lang_slave, 2, 0)
         grid.addWidget(self.lang_slave_value, 3, 0, 1, 2)
         grid.addWidget(self.start, 4, 0, 1, 2)
-        grid.addWidget(self.serv_state, 5, 0, 1, 2)
+        grid.addWidget(self.serv_state, 5, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
         grid.addWidget(self.input_label, 6, 0, 1, 2)
         grid.addWidget(self.input_value, 7, 0, 5, 2)
         grid.addWidget(self.output_label, 0, 2)
         grid.addWidget(self.output_value, 1, 2, 11, 2)
         grid.addWidget(self.close_button, 13, 3, 1, 1)
 
+        self.host_value.setText('127.0.0.1')
         self.port_value.setText('5555')
 
         self.start.clicked.connect(self.connection)
+        self.close_button.clicked.connect(self.close)
 
     def connection(self):
         if self.lang_slave_value.currentText() == "--Selectionnez un langage--":
@@ -64,6 +67,7 @@ class MainWindow(QMainWindow):
                 self.slave_socket = socket.socket()
                 self.slave_socket.connect((self.host_value.text(), port))
                 self.serv_state.setText("Connecté au serveur maitre")
+                self.serv_state.setStyleSheet("color: green")
                 self.start.setText("Arrêt du serveur")
                 self.start.clicked.connect(self.deconnexion)
                 self.receive_thread = threading.Thread(target = MainWindow.reception, args=[self])
@@ -85,9 +89,17 @@ class MainWindow(QMainWindow):
             if not code:
                 break
             else :
-                self.input_value.append(code)
-                self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
-                self.compilation_thread.start()
+                print(psutil.cpu_percent())
+                if psutil.cpu_percent() >= 50:
+                    self.serv_state.setText("Impossible de compiler plus de programmes, CPU surchargé")
+                    self.serv_state.setStyleSheet("color: red")
+                    message_erreur = "CPU surchargé"
+                    self.slave_socket.send(message_erreur.encode())
+                else:
+                    self.input_value.append(code)
+                    self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
+                    self.compilation_thread.start()
+        self.receive_thread.join()
     
     def compilation(self, code):
         if self.lang_slave_value.currentText() == "Python":
@@ -133,7 +145,8 @@ class MainWindow(QMainWindow):
 
     def deconnexion(self):
         self.slave_socket.close()
-        self.serv_state.setText("Déconnection réussie")
+        self.serv_state.setText("Déconnecté")
+        self.serv_state.setStyleSheet("color: red")
         self.start.setText("Démarrage du serveur et connexion au serveur maitre")
         self.start.clicked.connect(self.connection)
 

@@ -96,7 +96,8 @@ class MainWindow(QMainWindow):
                 print(language_serv)
                 self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
-                    self.serv_C = self.serveur_socket
+                    self.serv_C = conn, address
+                    print(self.serv_C)
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
@@ -108,7 +109,9 @@ class MainWindow(QMainWindow):
                 else :
                     self.serv_Cpp = None
                 if language_serv == "Python":
-                    self.serv_Python = self.serveur_socket
+                    print("Python here")
+                    self.serv_Python = conn
+                    print(self.serv_Python)
                 else :
                     self.serv_Python = None
                 #self.host = "Serveur"
@@ -161,6 +164,10 @@ class MainWindow(QMainWindow):
         print("end send to slave")
         try:
             if language == "Python":
+                print("Python here too")
+                print(self.serv_Python)
+                print(type(self.serv_Python))
+                print("no more")
                 if self.serv_Python != None:
                     self.serv_Python.send(message.encode())
                     print(f"Message envoyé au serveur Python : {message}")
