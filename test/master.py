@@ -75,6 +75,9 @@ class MainWindow(QMainWindow):
                 self.multi_client_thread.start()
             except OSError:
                 break
+            except Exception as e:
+                print(f"Erreur de connexion : {e}")
+                break
 
     def nature_equipement(self, conn, address):
         addr = re.search(r"\d.*[.].[0-9]*", str(address)).group()
@@ -119,33 +122,28 @@ class MainWindow(QMainWindow):
                 self.nbr_client += 1
                 self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
                 self.host_value.setText(str(self.nbr_client))
-                self.serv_C = None
-                self.serv_Java = None
-                self.serv_Cpp = None
-                self.serv_Python = None
                 self.host = "Client"
+        print(f"Nature de l'équipement ayant l'adresse {address} : {self.host}")
         MainWindow.reception(self, conn, address)
 
     def reception(self, conn, address):
         while True:
             if self.host == "Client":
-                message = conn.recv(1024).decode()
-                if not message:
-                    break
-                else:
-                    self.output.append(f"Message reçu de {address} :\n{message}")
-                    print(f"Nouveau message reçu : {message}")
-                    try:
-                        MainWindow.definir_language(self, message, conn)
-                    except Exception as e:
-                        print(f"Erreur : {e}")
-                        self.output.append(f"Erreur : {e}")
+                try :
+                    message = conn.recv(1024).decode()
+                    if not message:
+                        break
+                    else:
+                        self.output.append(f"Message reçu de {address} :\n{message}")
+                        print(f"Nouveau message reçu : {message}")
+                        MainWindow.definir_language(self, message, conn, address)
+                except Exception as e:
+                    print(f"Erreur : {e}")
+                    self.output.append(f"Erreur lors de la reception : {e}")
             else:
                 break
 
-        #conn.close()    # A voir si vraiment utile ou a deplacer
-
-    def definir_language(self, message, conn):
+    def definir_language(self, message, conn, address):
         try:
             if re.search("printf", message):
                 language = "C"
@@ -158,26 +156,24 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Language non reconnu: {e}")
             self.output.append(f"Erreur : Langage non reconnu")
-        MainWindow.send_to_slave(self, message, language, conn)
+        MainWindow.send_to_slave(self, message, language, conn, address)
 
-    def send_to_slave(self, message, language, conn):
+    def send_to_slave(self, message, language, conn, address):
         print("send to slave")
         print(language)
         print(message)
         print("end send to slave")
         try:
             if language == "Python":
-                print("Python here too")
+                print("Envoi du code Python")
                 print(self.serv_Python)
-                print(type(self.serv_Python))
-                print("no more")
-                if self.serv_Python != None:
+                if self.serv_Python:
                     self.serv_Python.send(message.encode())
                     print(f"Message envoyé au serveur Python : {message}")
                     output = self.serv_Python.recv(1024).decode()
                     print(f"Réponse du serveur Python : {output}")
                     self.output.append(f"Résultat du code envoyé : {output}")
-                    self.send_result_to_client(output, conn)
+                    self.send_result_to_client(output, conn, address)
                 else:
                     self.output.append("Aucun serveur Python connecté, compilation du code impossible")
                     print("Aucun serveur Python connecté")
@@ -185,10 +181,10 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
 
-    def send_result_to_client(self, message, conn):
-        print("send result to client")
+    def send_result_to_client(self, message, conn, address):
+        print("Envoi du résultat au client :")
         print(message)
-        print("end send result to client")
+        print(address)
         try:
             conn.send(message.encode())
             print(f"Message envoyé au client : {message}")

@@ -88,9 +88,6 @@ class MainWindow(QMainWindow):
             self.conn.clicked.connect(self.deconnexion)
             self.port_value.setReadOnly(True)
             self.host_value.setReadOnly(True)
-            self.thread_envoi = threading.Thread(target = self.detect_language, args=[self])
-            self.thread_envoi.start()
-
         except ValueError:
             self.conn_state.setText("Le port doit être un nombre")
             self.conn_state.setStyleSheet("color: red")
@@ -141,7 +138,6 @@ class MainWindow(QMainWindow):
             print(type(self.client_socket))
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
-            self.thread_envoi.join()
             MainWindow.reponse(self)
         except Exception as e:
             print(f"Erreur d'envoi : {e}")
@@ -154,6 +150,7 @@ class MainWindow(QMainWindow):
             else :
                 self.code_output.append(resultat)
                 print(f"Resultat du code : {resultat}")
+                break
 
     def deconnexion(self):
         self.client_socket.close()
