@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
         self.port_label = QLabel("Port :")
         self.port_value = QLineEdit("")
         self.conn = QPushButton("Connexion")
+        self.conn.setCheckable(True)
         self.conn_state = QLabel("")
         self.choose_lang = QComboBox()
         self.choose_lang.addItem("--Selectionnez un langage--")
@@ -27,10 +28,11 @@ class MainWindow(QMainWindow):
         self.choose_lang.addItem("C")
         self.choose_lang.addItem("Java")
         self.choose_lang.addItem("C++")
+        self.choose_lang.addItem("Texte")
         self.lang_status = QLabel("")
         self.code_label = QLabel("Inserez un code à executer :")
-        self.import_file = QPushButton("Importer un fichier")
         self.code_input = QTextEdit("")
+        self.import_file = QPushButton("Importer un fichier")
         self.code_send = QPushButton("Executer")
         self.filler = QLabel("")
         self.result_label = QLabel("Résultat en sortie :")
@@ -49,50 +51,69 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.choose_lang, 4, 0)
         grid.addWidget(self.lang_status, 5, 0)
         grid.addWidget(self.code_label, 6, 0)
-        grid.addWidget(self.import_file, 7, 0, 1, 2)
-        grid.addWidget(self.code_input, 8, 0, 1, 2)
+        grid.addWidget(self.code_input, 7, 0, 1, 2)
+        grid.addWidget(self.import_file, 8, 0, 1, 2)
         grid.addWidget(self.code_send, 9, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
         grid.addWidget(self.result_label, 0, 2, 1, 2)
         grid.addWidget(self.code_output, 1, 2, 8, 2)
         grid.addWidget(self.close_button, 9, 3, 1, 1)
 
-        self.conn.clicked.connect(self.connect)
+        
+        self.conn.clicked.connect(self.etat_bouton)
         self.code_send.clicked.connect(self.detect_language)
         self.import_file.clicked.connect(self.inserer_fichier)
-        self.close_button.clicked.connect(self.close)               #permet la fermeture directe de la fenêtre
+
+        self.close_button.clicked.connect(self.fermeture)      # Permet la fermeture de la fenêtre
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
-      
-    def inserer_fichier(self):
-        fichier = QFileDialog(self)
-        fichier.setFileMode(QFileDialog.FileMode.ExistingFile)
-        fichier.setNameFilter("Fichiers texte (*.txt);;Fichiers Python (*.py);;Fichiers Java (*.java);;Fichiers C (*.c);;Fichiers C++ (*.cpp *.cc)")
-        if fichier.exec():
-            code_importer = fichier.selectedFiles()
-            with open(code_importer, 'r') as file:
+
+    def inserer_fichier(self):              # https://www.pythontutorial.net/pyqt/pyqt-qfiledialog/
+        fichier = QFileDialog.getOpenFileName(
+            self,
+            "Ouvrir un fichier",
+            "",
+            "Fichier texte (*.txt);; Python (*.py);; C (*.c);; Java (*.java);; C++ (*.cpp)"
+        )
+        if fichier :
+            fichier = fichier[0]
+            with open(fichier, 'r') as file:
                 self.code_input.setText(file.read())
 
-    def connect(self):
+    def etat_bouton(self):
+        if self.conn.isChecked():
+            self.conn.setText("Déconnexion")
+            self.connexion()
+            self.port_value.setReadOnly(False)
+            self.host_value.setReadOnly(False)
+            self.close_button.setEnabled(True)
+        else:
+            self.conn.setText("Connexion")
+            self.deconnexion()
+            self.port_value.setReadOnly(True)
+            self.host_value.setReadOnly(True)
+
+    def fermeture(self):
+        if self.conn.isChecked():
+            self.conn_state.setText("Impossible de fermer la fenêtre en étant encore connecté au serveur")
+            self.conn_state.setStyleSheet("color: red")
+        else:
+            self.close()
+
+    def connexion(self):
         try :
             port = int(self.port_value.text())
             self.client_socket = socket.socket()
             self.client_socket.connect((self.host_value.text(), port))
-            print(type(self.client_socket))
             self.conn_state.setText("Connexion réussie")
-            self.conn_state.setStyleSheet("color: #01C38D")
-            self.conn.setText("Déconnexion")
-            self.conn.clicked.connect(self.disconnect)
-            self.port_value.setReadOnly(True)
-            self.host_value.setReadOnly(True)
-            self.thread_envoi = threading.Thread(target = self.detect_language, args=[self])
-            self.thread_envoi.start()
-
+            self.conn_state.setStyleSheet("color: #01C38D")            
         except ValueError:
             self.conn_state.setText("Le port doit être un nombre")
             self.conn_state.setStyleSheet("color: red")
             return
-        
+        except ConnectionRefusedError:
+            self.conn_state.setText("Connexion refusée")
+            self.conn_state.setStyleSheet("color: red")
         except Exception as e:
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
@@ -103,36 +124,64 @@ class MainWindow(QMainWindow):
         if re.search("printf", message):
             language = "C"
             self.choose_lang.setCurrentText("C")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("System.out.println", message):
             language = "Java"
             self.choose_lang.setCurrentText("Java")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("cout", message):
             language = "C++"
             self.choose_lang.setCurrentText("C++")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
         elif re.search("print", message):
             language = "Python"
             self.choose_lang.setCurrentText("Python")
+            self.lang_status.setText("")
+            MainWindow.envoi(self, message)
+        elif message == "":
+            language = None
         else :
-
-            raise Exception("Langage non reconnu")
+            language = "Texte"
+            self.choose_lang.setCurrentText("Texte")
+            self.lang_status.setText("Langage non reconnu, votre code sera traité comme du texte, changer le langage si nécessaire")
+            self.lang_status.setStyleSheet("color: red")
         print(language)
-        MainWindow.envoi(self, language, message)
     
     
-    def envoi(self, language, message):
-        print(message)
-        message = f"#{language} \n {message}"
-        print(message)
+    def envoi(self, message):
         try :
             print(self.client_socket)
             print(type(self.client_socket))
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
-            self.thread_envoi.join()
-                    
+            MainWindow.reponse(self)
         except Exception as e:
             print(f"Erreur d'envoi : {e}")
 
+    def reponse(self):
+        while True:
+            resultat = self.client_socket.recv(1024).decode()
+            if not resultat:
+                break
+            else :
+                self.code_output.append(resultat)
+                print(f"Resultat du code : {resultat}")
+                break
+
+    def deconnexion(self):
+        message_fin_conn = "fin"
+        self.client_socket.send(message_fin_conn.encode())
+        if self.client_socket.recv(1024).decode() == "ok, fin":
+            self.client_socket.close()
+            self.conn_state.setText("Déconnecté")
+            self.conn_state.setStyleSheet("color: red")
+        else:
+            self.conn_state.setText("Erreur lors de la déconnexion")
+            self.conn_state.setStyleSheet("color: red")
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -86,13 +86,18 @@ class MainWindow(QMainWindow):
 
     def reception(self):
         while True:
-            code = self.slave_socket.recv(1024).decode()
-            if not code:
-                break
-            else :
-                self.input_value.append(code)
-                self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
-                self.compilation_thread.start()
+            try:
+                code = self.slave_socket.recv(1024).decode()
+                if not code:
+                    break
+                else :
+                    self.input_value.append(code)
+                    self.compilation_thread = threading.Thread(target = MainWindow.compilation, args=[self, code])
+                    self.compilation_thread.start()
+            except Exception as e:
+                print(f"Erreur de réception : {e}")
+                self.serv_state.setText("Erreur lors de la réception")
+                self.serv_state.setStyleSheet("color: red")
     
     def compilation(self, code):
         try:
@@ -115,7 +120,6 @@ class MainWindow(QMainWindow):
         print("Envoi du résultat")
         print(code)
         try:
-            print("yep")
             self.slave_socket.send(code.encode())
             print("Résultat envoyé")
             print(code)

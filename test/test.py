@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
         self.port_label = QLabel("Port :")
         self.port_value = QLineEdit("")
         self.conn = QPushButton("Connexion")
+        self.conn.setCheckable(True)
         self.conn_state = QLabel("")
         self.choose_lang = QComboBox()
         self.choose_lang.addItem("--Selectionnez un langage--")
@@ -57,10 +58,12 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.code_output, 1, 2, 8, 2)
         grid.addWidget(self.close_button, 9, 3, 1, 1)
 
-        self.conn.clicked.connect(self.connect)
+        
+        self.conn.clicked.connect(self.etat_bouton)
         self.code_send.clicked.connect(self.detect_language)
         self.import_file.clicked.connect(self.inserer_fichier)
-        self.close_button.clicked.connect(self.close)               # Permet la fermeture de la fenêtre
+
+        self.close_button.clicked.connect(self.fermeture)      # Permet la fermeture de la fenêtre
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
@@ -77,17 +80,33 @@ class MainWindow(QMainWindow):
             with open(fichier, 'r') as file:
                 self.code_input.setText(file.read())
 
-    def connect(self):
+    def etat_bouton(self):
+        if self.conn.isChecked():
+            self.conn.setText("Déconnexion")
+            self.connexion()
+            self.port_value.setReadOnly(False)
+            self.host_value.setReadOnly(False)
+            self.close_button.setEnabled(True)
+        else:
+            self.conn.setText("Connexion")
+            self.deconnexion()
+            self.port_value.setReadOnly(True)
+            self.host_value.setReadOnly(True)
+
+    def fermeture(self):
+        if self.conn.isChecked():
+            self.conn_state.setText("Impossible de fermer la fenêtre en étant encore connecté au serveur")
+            self.conn_state.setStyleSheet("color: red")
+        else:
+            self.close()
+
+    def connexion(self):
         try :
             port = int(self.port_value.text())
             self.client_socket = socket.socket()
             self.client_socket.connect((self.host_value.text(), port))
             self.conn_state.setText("Connexion réussie")
-            self.conn_state.setStyleSheet("color: #01C38D")
-            self.conn.setText("Déconnexion")
-            self.conn.clicked.connect(self.deconnexion)
-            self.port_value.setReadOnly(True)
-            self.host_value.setReadOnly(True)
+            self.conn_state.setStyleSheet("color: #01C38D")            
         except ValueError:
             self.conn_state.setText("Le port doit être un nombre")
             self.conn_state.setStyleSheet("color: red")
@@ -153,13 +172,16 @@ class MainWindow(QMainWindow):
                 break
 
     def deconnexion(self):
-        self.client_socket.close()
-        self.conn_state.setText("Déconnecté")
-        self.conn_state.setStyleSheet("color: red")
-        self.conn.setText("Connexion")
-        self.conn.clicked.connect(self.connect)
-        self.port_value.setReadOnly(False)
-        self.host_value.setReadOnly(False)
+        message_fin_conn = "fin"
+        self.client_socket.send(message_fin_conn.encode())
+        if self.client_socket.recv(1024).decode() == "ok, fin":
+            self.client_socket.close()
+            self.conn_state.setText("Déconnecté")
+            self.conn_state.setStyleSheet("color: red")
+        else:
+            self.conn_state.setText("Erreur lors de la déconnexion")
+            self.conn_state.setStyleSheet("color: red")
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

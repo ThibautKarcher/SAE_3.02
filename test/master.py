@@ -136,7 +136,14 @@ class MainWindow(QMainWindow):
                     else:
                         self.output.append(f"Message reçu de {address} :\n{message}")
                         print(f"Nouveau message reçu : {message}")
-                        MainWindow.definir_language(self, message, conn, address)
+                        if message == "fin":
+                            print(f"Fin de connexion avec le client {address}")
+                            conn.send("ok, fin".encode())
+                            #conn.close()
+                            #self.host_list.takeItem(self.host_list.row(address)) # A revoir
+                            break
+                        else:
+                            MainWindow.definir_language(self, message, conn, address)
                 except Exception as e:
                     print(f"Erreur : {e}")
                     self.output.append(f"Erreur lors de la reception : {e}")
