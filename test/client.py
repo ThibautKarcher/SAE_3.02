@@ -63,22 +63,29 @@ class MainWindow(QMainWindow):
         self.code_send.clicked.connect(self.detect_language)
         self.import_file.clicked.connect(self.inserer_fichier)
 
-        self.close_button.clicked.connect(self.fermeture)      # Permet la fermeture de la fenêtre
+        self.close_button.clicked.connect(self.fermeture)
 
         self.host_value.setText("127.0.0.1")
         self.port_value.setText("5555")
 
     def inserer_fichier(self):              # https://www.pythontutorial.net/pyqt/pyqt-qfiledialog/
-        fichier = QFileDialog.getOpenFileName(
-            self,
-            "Ouvrir un fichier",
-            "",
-            "Fichier texte (*.txt);; Python (*.py);; C (*.c);; Java (*.java);; C++ (*.cpp)"
-        )
-        if fichier :
-            fichier = fichier[0]
-            with open(fichier, 'r') as file:
-                self.code_input.setText(file.read())
+        try:
+            fichier = QFileDialog.getOpenFileName(
+                self,
+                "Ouvrir un fichier",
+                "",
+                "Fichier texte (*.txt);; Python (*.py);; C (*.c);; Java (*.java);; C++ (*.cpp *.cc)"
+            )
+            if fichier :
+                fichier = fichier[0]
+                with open(fichier, 'r') as file:
+                    self.code_input.setText(file.read())
+        except FileNotFoundError:
+            self.conn_state.setText("Fichier non trouvé")
+            self.conn_state.setStyleSheet("color: red")
+        except Exception as e:
+            print(f"Erreur lors de l'ouverture du fichier : {e}")
+            self.code_input.setText("Erreur lors de l'ouverture du fichier")
 
     def etat_bouton(self):
         if self.conn.isChecked():
@@ -98,7 +105,7 @@ class MainWindow(QMainWindow):
             self.conn_state.setText("Impossible de fermer la fenêtre en étant encore connecté au serveur")
             self.conn_state.setStyleSheet("color: red")
         else:
-            self.close()
+            self.close()        # Permet la fermeture de la fenêtre
 
     def connexion(self):
         try :
@@ -163,12 +170,17 @@ class MainWindow(QMainWindow):
 
     def reponse(self):
         while True:
-            resultat = self.client_socket.recv(1024).decode()
-            if not resultat:
-                break
-            else :
-                self.code_output.append(resultat)
-                print(f"Resultat du code : {resultat}")
+            try:
+                resultat = self.client_socket.recv(1024).decode()
+                if not resultat:
+                    break
+                else :
+                    self.code_output.append(resultat)
+                    print(f"Resultat du code : {resultat}")
+                    break
+            except Exception as e:
+                print(f"Erreur lors de la réception du résultat : {e}")
+                self.code_output.append(f"Erreur lors de la réception du résultat : {e}")
                 break
 
     def deconnexion(self):

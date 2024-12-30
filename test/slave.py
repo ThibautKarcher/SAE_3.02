@@ -4,6 +4,7 @@ import socket
 import threading
 import subprocess
 import psutil
+import re
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 
@@ -107,11 +108,73 @@ class MainWindow(QMainWindow):
                     code_fichier.write(code)
                 resultat = subprocess.run([sys.executable, 'code.py'], capture_output=True, text=True)
                 print(resultat)
-                print(resultat.stdout)
-                print("Résultat compilé")
+                if resultat.stderr == "":
+                    print(resultat.stdout)
+                    result = resultat.stdout
+                    print("Résultat compilé")
+                else:
+                    print(resultat.stderr)
+                    result = resultat.stderr
+                    print("Erreur de compilation")
+            elif self.lang_slave_value.currentText() == "C":
+                print("compilation C")
+                with open('code.c','w') as code_fichier:
+                    code_fichier.write(code)                                    #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
+                subprocess.run('gcc -o code code.c', shell=True)
+                resultat = subprocess.run(['./code'], capture_output=True, text=True)
+                print(resultat)
+                if resultat.stderr == "":
+                    print(resultat.stdout)
+                    result = resultat.stdout
+                    print("Résultat compilé")
+                else:
+                    print(resultat.stderr)
+                    result = resultat.stderr
+                    print("Erreur de compilation")
+            elif self.lang_slave_value.currentText() == "C++":
+                print("compilation C++")
+                with open('code.cpp','w') as code_fichier:
+                    code_fichier.write(code)
+                subprocess.run('g++ -o code code.cpp', shell=True)
+                resultat = subprocess.run(['./code'], capture_output=True, text=True)
+                print(resultat)
+                if resultat.stderr == "":
+                    print(resultat.stdout)
+                    result = resultat.stdout
+                    print("Résultat compilé")
+                else:
+                    print(resultat.stderr)
+                    result = resultat.stderr
+                    print("Erreur de compilation")
+            elif self.lang_slave_value.currentText() == "Java":
+                print("compilation Java")
+                nom_fich = re.findall("public class (.*) {", code)
+                print(nom_fich)
+                if nom_fich != None:
+                    nom_fich = nom_fich[0]
+                    print(nom_fich)
+                else:
+                    nom_fich = "code"
+                with open(f'{nom_fich}.java','w') as code_fichier:
+                    code_fichier.write(code)
+                subprocess.run(f'javac {nom_fich}.java', shell=True)
+                resultat = subprocess.run(['java', f'{nom_fich}'], capture_output=True, text=True)
+                print(resultat)
+                if resultat.stderr == "":
+                    print(resultat.stdout)
+                    result = resultat.stdout
+                    print("Résultat compilé")
+                else:
+                    print(resultat.stderr)
+                    result = resultat.stderr
+                    print("Erreur de compilation")
+                if os.path.exists(f'{nom_fich}.java'):
+                    os.remove(f'{nom_fich}.java')
+                else:
+                    pass
             else:
                 self.serv_state.setText("Langage non reconnu")
-            self.envoi_resultat(resultat.stdout)
+            self.envoi_resultat(result)
         except Exception as e:
             print(f"Erreur de compilation : {e}")
             self.output_value.append(f"Erreur de compilation : {e}")
@@ -139,31 +202,3 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-
-
-'''
-elif self.lang_slave_value.currentText() == "C":
-                with open('code.c','w') as code_fichier:
-                    code_fichier.write(code)        #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
-                subprocess.run('g++', '-o', 'code', 'code.c')
-                resultat = subprocess.run(['./code'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-            elif self.lang_slave_value.currentText() == "C++":
-                with open('code.cpp') as code_fichier:
-                    code_fichier.write(code)
-                subprocess.run([sys.executable], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-                with open('code.cc','w') as code_fichier:
-                    code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.cc'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-            elif self.lang_slave_value.currentText() == "Java":
-                with open('code.java','w') as code_fichier:
-                    code_fichier.write(code)
-                resultat = subprocess.run([sys.executable, 'code.java'], capture_output=True, text=True)
-                print(resultat.stdout)
-                self.output_value.append(resultat.stdout)
-'''

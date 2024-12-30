@@ -3,6 +3,7 @@ import socket
 import threading
 import re
 from PyQt6.QtWidgets import *
+from PyQt6.QtCore import Qt
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -64,6 +65,10 @@ class MainWindow(QMainWindow):
             print("Erreur de démarrage du serveur")
             self.serv_state.setText("Erreur de démarrage du serveur")
             self.serv_state.setStyleSheet("color: red")
+        except Exception as e:
+            print(f"Erreur : {e}")
+            self.serv_state.setText(f"Erreur : {e}")
+            self.serv_state.setStyleSheet("color: red")
         
 
     def accept(self, serveur_socket):
@@ -99,20 +104,19 @@ class MainWindow(QMainWindow):
                 print(language_serv)
                 self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
-                    self.serv_C = conn, address
+                    self.serv_C = conn
                     print(self.serv_C)
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
-                    self.serv_Java = addr
+                    self.serv_Java = conn
                 else :
                     self.serv_Java = None
                 if language_serv == "C++":
-                    self.serv_Cpp = addr
+                    self.serv_Cpp = conn
                 else :
                     self.serv_Cpp = None
                 if language_serv == "Python":
-                    print("Python here")
                     self.serv_Python = conn
                     print(self.serv_Python)
                 else :
@@ -122,6 +126,8 @@ class MainWindow(QMainWindow):
                 self.nbr_client += 1
                 self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
                 self.host_value.setText(str(self.nbr_client))
+                self.host_pos_in_list = self.host_list.findItems(f"Client{self.nbr_client} : {addr} connecté", Qt.MatchFlag.MatchExactly)[0]
+                print(self.host_pos_in_list)
                 self.host = "Client"
         print(f"Nature de l'équipement ayant l'adresse {address} : {self.host}")
         MainWindow.reception(self, conn, address)
@@ -140,8 +146,9 @@ class MainWindow(QMainWindow):
                             print(f"Fin de connexion avec le client {address}")
                             conn.send("ok, fin".encode())
                             #conn.close()
-                            #self.host_list.takeItem(self.host_list.row(address)) # A revoir
-                            break
+                            self.nbr_client -= 1
+                            self.host_list.takeItem(self.host_list.row(self.host_pos_in_list))      #https://stackoverflow.com/questions/23835847/how-to-remove-item-from-qlistwidget
+                            break                                                                   #reste quelques problèmes avec suppression de l'item dans la liste
                         else:
                             MainWindow.definir_language(self, message, conn, address)
                 except Exception as e:
@@ -184,9 +191,48 @@ class MainWindow(QMainWindow):
                 else:
                     self.output.append("Aucun serveur Python connecté, compilation du code impossible")
                     print("Aucun serveur Python connecté")
-                  
+            elif language == "C":
+                print("Envoi du code C")
+                print(self.serv_C)
+                if self.serv_C:
+                    self.serv_C.send(message.encode())
+                    print(f"Message envoyé au serveur C : {message}")
+                    output = self.serv_C.recv(1024).decode()
+                    print(f"Réponse du serveur C : {output}")
+                    self.output.append(f"Résultat du code envoyé : {output}")
+                    self.send_result_to_client(output, conn, address)
+                else:
+                    self.output.append("Aucun serveur C connecté, compilation du code impossible")
+                    print("Aucun serveur C connecté")
+            elif language == "C++":
+                print("Envoi du code C++")
+                print(self.serv_Cpp)
+                if self.serv_Cpp:
+                    self.serv_Cpp.send(message.encode())
+                    print(f"Message envoyé au serveur C++ : {message}")
+                    output = self.serv_Cpp.recv(1024).decode()
+                    print(f"Réponse du serveur C++ : {output}")
+                    self.output.append(f"Résultat du code envoyé : {output}")
+                    self.send_result_to_client(output, conn, address)
+                else:
+                    self.output.append("Aucun serveur C++ connecté, compilation du code impossible")
+                    print("Aucun serveur C++ connecté")
+            elif language == "Java":
+                print("Envoi du code Java")
+                print(self.serv_Java)
+                if self.serv_Java:
+                    self.serv_Java.send(message.encode())
+                    print(f"Message envoyé au serveur Java : {message}")
+                    output = self.serv_Java.recv(1024).decode()
+                    print(f"Réponse du serveur Java : {output}")
+                    self.output.append(f"Résultat du code envoyé : {output}")
+                    self.send_result_to_client(output, conn, address)
+                else:
+                    self.output.append("Aucun serveur Java connecté, compilation du code impossible")
+                    print("Aucun serveur Java connecté")
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
+            conn.send("Erreur d'envoi au serveur esclave".encode())
 
     def send_result_to_client(self, message, conn, address):
         print("Envoi du résultat au client :")
@@ -213,29 +259,3 @@ if __name__ == "__main__":
     Window = MainWindow()
     Window.show()
     app.exec()
-
-
-# A implementer et modif
-    """
-    def send_to_slave(self, message, language):
-        print("send to slave")
-        print(language)
-        print(message)
-        print("end send to slave")
-        try :
-            if language == "C":
-                self.slave_socket = socket.socket()
-                self.slave_socket.connect((self.serv_C, 3333))
-            elif language == "Java":
-                self.slave_socket = socket.socket()
-                self.slave_socket.connect((self.serv_Java, 4444))
-            elif language == "C++":
-                self.slave_socket = socket.socket()
-                self.slave_socket.connect((self.serv_Cpp, 2222))
-            elif language == "Python":
-                self.slave_socket = socket.socket()
-                self.slave_socket.connect((self.serv_Python, 1111))
-        except Exception as e:
-            print(f"Erreur de connexion : {e}")
-    
-    """
