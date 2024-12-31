@@ -10,12 +10,24 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 
 class MainWindow(QMainWindow):
+    '''
+    Classe principale de l'application
+    '''
     def __init__(self):
+        '''
+        Iinitialisation de la fenêtre principale, ainsi que de tout les widgets necessaires
+        ainsi que leur position dans la fenêtre
+        Attribution des actions aux boutons
+        '''
         super().__init__()
         widget = QWidget()
         self.setWindowTitle("Serveur slave")
         self.resize(700, 500)
         self.setCentralWidget(widget)
+
+        '''
+        creation des widgets : labels, boutons, zones de texte, barre de progression, etc...
+        '''
 
         self.host_label = QLabel("Serveur maitre :")
         self.host_value = QLineEdit("")
@@ -44,6 +56,10 @@ class MainWindow(QMainWindow):
         self.cpu_value.setMaximum(50)
         self.close_button = QPushButton("Fermer")
 
+        '''
+        Positionnement des widgets dans la fenêtre via la grille de positionnement :
+        '''
+
         grid = QGridLayout()
         widget.setLayout(grid)
         grid.addWidget(self.host_label, 0, 0)
@@ -64,6 +80,10 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.input_value, 7, 0, 6, 4)
         grid.addWidget(self.close_button, 13, 3, 1, 1)
 
+        '''
+        Mise en place de valeurs par défaut et attribution des actions aux boutons :
+        '''
+
         self.host_value.setText('127.0.0.1')
         self.port_value.setText('5555')
         self.nbr_prog_value.setText('5')
@@ -72,6 +92,12 @@ class MainWindow(QMainWindow):
         self.close_button.clicked.connect(self.close)
 
     def connection(self):
+        '''
+        Méthode de connexion au serveur maitre
+        Une fois que le langage compilable par le serveur est selectionné, le serveur se connecte au serveur maitre 
+        Si la connexion est réussie, le serveur est prêt à recevoir des codes à compiler
+        sinon un message d'erreur est affiché
+        '''
         if self.lang_slave_value.currentText() == "--Selectionnez un langage--":
             self.serv_state.setText("Veuillez selectionner un langage pour ce serveur")
             self.serv_state.setStyleSheet("color: red")
@@ -101,6 +127,12 @@ class MainWindow(QMainWindow):
                 self.connecté = False       
 
     def reception(self):
+        '''
+        Méthode de réception des codes à compiler
+        Si le CPU est surchargé ou si le nombre max de programmes simultanés est atteint,
+        un message d'erreur est envoyé au serveur maitre et le serveur ne compilera pas le code
+        Sinon, le code est envoyé vers la méthode de compilation
+        '''
         while True:
             try:
                 self.charge = int(psutil.cpu_percent())
@@ -134,6 +166,13 @@ class MainWindow(QMainWindow):
                 self.serv_state.setStyleSheet("color: red")
     
     def compilation(self, code):
+        '''
+        Méthode de compilation des codes reçus
+        Le code est compilé avec le compilateur correspondant en fonction du
+        language selectionné à compiler
+        Si la compilation est réussie, le résultat est envoyé au serveur maitre
+        Sinon, un message d'erreur est envoyé
+        '''
         try:
             if self.lang_slave_value.currentText() == "Python":
                 with open('code.py', 'w') as code_fichier:
@@ -186,6 +225,13 @@ class MainWindow(QMainWindow):
             print(f"Erreur de compilation : {e}")
 
     def envoi_resultat(self, code):
+        '''
+        Méthode d'envoi des résultats de la compilation
+        Si la connexion avec le serveur maitre est encore en cours, 
+        le résultat est envoyé au serveur maitre qui joue le role de passrelle vers le client.
+        Si l'envoi est réussi, le résultat est affiché
+        Sinon, un message d'erreur est affiché
+        '''
         try:
             self.slave_socket.send(code.encode())
             print("Résultat envoyé : ")
@@ -194,11 +240,13 @@ class MainWindow(QMainWindow):
             print(f"Erreur d'envoi du résultat : {e}")
 
     def deconnexion(self):
+        '''
+        Méthode de déconnexion du serveur
+        '''
         try:
             self.slave_socket.close()
             self.serv_state.setText("Déconnecté")
             self.serv_state.setStyleSheet("color: red")
-            print("Déconnecté")
         except Exception as e:
             print(f"Erreur de déconnexion : {e}")
 

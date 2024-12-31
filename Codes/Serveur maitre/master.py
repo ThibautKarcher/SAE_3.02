@@ -5,18 +5,22 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 
 class MainWindow(QMainWindow):
-    ''' 
-    Méthode d'initialisation de la fenêtre principale 
-    contient l'ensemble des widgets de la fenêtre ainsi que leur position
-    cette méthode permet aussi d'associer les boutons à leur méthode associés
-    '''
     def __init__(self):
+        ''' 
+        Méthode d'initialisation de la fenêtre principale 
+        contient l'ensemble des widgets de la fenêtre ainsi que leur position
+        cette méthode permet aussi d'associer les boutons à leur méthode associés
+        '''
         self.nbr_client = 0
         super().__init__()
         widget = QWidget()
         self.setWindowTitle("Serveur maitre")
         self.resize(700, 500)
         self.setCentralWidget(widget)
+
+        '''
+        Initialisation des widgets : 
+        '''
 
         self.host_label = QLabel("Nombre de clients connectés :")
         self.host_value = QLineEdit(str(self.nbr_client))
@@ -34,6 +38,9 @@ class MainWindow(QMainWindow):
         self.output.setReadOnly(True)
         self.close_window = QPushButton("Fermer")
 
+        '''
+        Positionnement des widgets dans la fenêtre :
+        '''
         grid = QGridLayout()
         widget.setLayout(grid)
         grid.addWidget(self.port_label, 0, 0)
@@ -50,10 +57,19 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.output, 1, 2, 7, 2)
         grid.addWidget(self.close_window, 8, 3, 1, 1)
 
+        '''
+        Association des boutons à la méthode associée de chacun :
+        '''
         self.connect.clicked.connect(self.demarrage)
         self.close_window.clicked.connect(self.close)
 
     def demarrage(self):
+        '''
+        Methode de démarrage du serveur, elle permet la mise en route de l'écoute
+        du serveur sur le port ouvert (ici 5555)
+        Si le démarrage est établie sans erreur, la méthode d'acceptation de la connexion est appelée
+        Une gestion des erreurs est aussi établie pour éviter le crash du serveur
+        '''
         try:   
             self.connect.setEnabled(False)
             self.serv_state.setText('Serveur ON')
@@ -76,6 +92,13 @@ class MainWindow(QMainWindow):
         
 
     def accept(self, serveur_socket):
+        '''
+        Méthode d'acceptation en continu des connexions des clients et
+        serveurs esclaves sur le port ouvert
+        Si la connexion est correctement acceptée, la méthode de 
+        détermination de la nature de l'équipement est appelée afin 
+        de déterminer si l'équipement est un client ou un serveur esclave
+        '''
         while True:
             try:
                 conn, address = serveur_socket.accept()
@@ -89,6 +112,12 @@ class MainWindow(QMainWindow):
                 break
 
     def nature_equipement(self, conn, address):
+        '''
+        Méthode de détermination de la nature de l'équipement connecté
+        Si l'équipement est un serveur esclave, il est ajouté à la liste des serveurs esclaves
+        et son langage est déterminé à l'aide du script liste_serveur.txt
+        Si l'équipement est un client, il est ajouté à la liste des clients connectés
+        '''
         addr = re.search(r"\d.*[.].[0-9]*", str(address)).group()
         with open('liste_serveur.txt', 'r') as serv:
             lecture = serv.read()
@@ -133,6 +162,13 @@ class MainWindow(QMainWindow):
         MainWindow.reception(self, conn, address)
 
     def reception(self, conn, address):
+        '''
+        Méthode de réception des messages envoyés par les clients
+        Si le message est "fin", la connexion avec le client est fermée et 
+        celui-ci est retiré de la liste des clients connectés
+        Sinon, le message est conservé et est envoyé à la méthode de détermination
+        du langage du code afin de savoir à quel serveur esclave envoyer le code
+        '''
         while True:
             if self.host == "Client":
                 try :
@@ -159,6 +195,12 @@ class MainWindow(QMainWindow):
                 break
 
     def definir_language(self, message, conn, address):
+        '''
+        Méthode de détermination du langage du code envoyé par le client
+        Si le message contient des mots-clés propres à un langage de programmation
+        le langage est déterminé et le code est envoyé au serveur esclave correspondant
+        Sinon, un message d'erreur est envoyé au client
+        '''
         try:
             if re.search("printf", message):
                 language = "C"
@@ -174,6 +216,13 @@ class MainWindow(QMainWindow):
         MainWindow.send_to_slave(self, message, language, conn, address)
 
     def send_to_slave(self, message, language, conn, address):
+        '''
+        Méthode d'envoi du code au serveur esclave correspondant au langage du code
+        Si le serveur esclave est connecté, le code est envoyé et le résultat de la compilation
+        est renvoyé au client
+        Sinon, un message d'erreur est envoyé au client afin d'éviter un potentiel crash du client
+        ou du serveur lui-même
+        '''
         try:
             if language == "Python":
                 if self.serv_Python:
@@ -241,9 +290,15 @@ class MainWindow(QMainWindow):
                     conn.send("Aucun serveur Java connecté".encode())
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
+            self.output.append(f"Erreur d'envoi au serveur esclave : {e}")
             conn.send("Erreur d'envoi au serveur esclave".encode())
 
-    def send_result_to_client(self, message, conn, address):
+    def send_result_to_client(self, message, conn):
+        '''
+        Méthode d'envoi du résultat de la compilation du code au client après 
+        avoir obtenu la réponse lors de la méthode précédente
+        Si la connexion avec le client est perdue, un message d'erreur est renvoyé
+        '''
         try:
             conn.send(message.encode())
             print(f"Message envoyé au client : {message}")
