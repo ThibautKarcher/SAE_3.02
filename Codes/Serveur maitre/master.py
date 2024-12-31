@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
             self.output.append(f"Erreur d'envoi au serveur esclave : {e}")
             conn.send("Erreur d'envoi au serveur esclave".encode())
 
-    def send_result_to_client(self, message, conn):
+    def send_result_to_client(self, message, conn, address):
         '''
         Méthode d'envoi du résultat de la compilation du code au client après 
         avoir obtenu la réponse lors de la méthode précédente
