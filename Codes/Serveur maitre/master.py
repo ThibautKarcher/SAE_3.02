@@ -122,6 +122,7 @@ class MainWindow(QMainWindow):
                 else :
                     self.serv_Python = None
                 self.host = "Serveur"
+                self.host_pos_in_list = self.slave_list.findItems(f"Serveur {language_serv} : {addr} connecté", Qt.MatchFlag.MatchExactly)[0]
             else :
                 self.nbr_client += 1
                 self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
@@ -154,6 +155,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     print(f"Erreur : {e}")
                     self.output.append(f"Erreur lors de la reception : {e}")
+                    break
             else:
                 break
 
@@ -182,54 +184,74 @@ class MainWindow(QMainWindow):
                 print("Envoi du code Python")
                 print(self.serv_Python)
                 if self.serv_Python:
-                    self.serv_Python.send(message.encode())
-                    print(f"Message envoyé au serveur Python : {message}")
-                    output = self.serv_Python.recv(1024).decode()
-                    print(f"Réponse du serveur Python : {output}")
-                    self.output.append(f"Résultat du code envoyé : {output}")
-                    self.send_result_to_client(output, conn, address)
+                    try:
+                        self.serv_Python.send(message.encode())
+                        print(f"Message envoyé au serveur Python : {message}")
+                        output = self.serv_Python.recv(1024).decode()
+                        print(f"Réponse du serveur Python : {output}")
+                        self.output.append(f"Résultat du code envoyé : {output}")
+                        self.send_result_to_client(output, conn, address)
+                    except Exception as e:
+                        print(f"Erreur d'envoi au serveur esclave : {e}")
+                        conn.send("Serveur Python non disponible".encode())
                 else:
                     self.output.append("Aucun serveur Python connecté, compilation du code impossible")
                     print("Aucun serveur Python connecté")
+                    conn.send("Aucun serveur Python connecté".encode())
             elif language == "C":
                 print("Envoi du code C")
                 print(self.serv_C)
                 if self.serv_C:
-                    self.serv_C.send(message.encode())
-                    print(f"Message envoyé au serveur C : {message}")
-                    output = self.serv_C.recv(1024).decode()
-                    print(f"Réponse du serveur C : {output}")
-                    self.output.append(f"Résultat du code envoyé : {output}")
-                    self.send_result_to_client(output, conn, address)
+                    try:
+                        self.serv_C.send(message.encode())
+                        print(f"Message envoyé au serveur C : {message}")
+                        output = self.serv_C.recv(1024).decode()
+                        print(f"Réponse du serveur C : {output}")
+                        self.output.append(f"Résultat du code envoyé : {output}")
+                        self.send_result_to_client(output, conn, address)
+                    except Exception as e:
+                        print(f"Erreur d'envoi au serveur esclave : {e}")
+                        conn.send("Serveur C non disponible : ".encode())
                 else:
                     self.output.append("Aucun serveur C connecté, compilation du code impossible")
                     print("Aucun serveur C connecté")
+                    conn.send("Aucun serveur C connecté".encode())
             elif language == "C++":
                 print("Envoi du code C++")
                 print(self.serv_Cpp)
                 if self.serv_Cpp:
-                    self.serv_Cpp.send(message.encode())
-                    print(f"Message envoyé au serveur C++ : {message}")
-                    output = self.serv_Cpp.recv(1024).decode()
-                    print(f"Réponse du serveur C++ : {output}")
-                    self.output.append(f"Résultat du code envoyé : {output}")
-                    self.send_result_to_client(output, conn, address)
+                    try:
+                        self.serv_Cpp.send(message.encode())
+                        print(f"Message envoyé au serveur C++ : {message}")
+                        output = self.serv_Cpp.recv(1024).decode()
+                        print(f"Réponse du serveur C++ : {output}")
+                        self.output.append(f"Résultat du code envoyé : {output}")
+                        self.send_result_to_client(output, conn, address)
+                    except Exception as e:
+                        print(f"Erreur d'envoi au serveur esclave : {e}")
+                        conn.send("Serveur C++ non disponible".encode())
                 else:
                     self.output.append("Aucun serveur C++ connecté, compilation du code impossible")
                     print("Aucun serveur C++ connecté")
+                    conn.send("Aucun serveur C++ connecté".encode())
             elif language == "Java":
                 print("Envoi du code Java")
                 print(self.serv_Java)
                 if self.serv_Java:
-                    self.serv_Java.send(message.encode())
-                    print(f"Message envoyé au serveur Java : {message}")
-                    output = self.serv_Java.recv(1024).decode()
-                    print(f"Réponse du serveur Java : {output}")
-                    self.output.append(f"Résultat du code envoyé : {output}")
-                    self.send_result_to_client(output, conn, address)
+                    try:
+                        self.serv_Java.send(message.encode())
+                        print(f"Message envoyé au serveur Java : {message}")
+                        output = self.serv_Java.recv(1024).decode()
+                        print(f"Réponse du serveur Java : {output}")
+                        self.output.append(f"Résultat du code envoyé : {output}")
+                        self.send_result_to_client(output, conn, address)
+                    except Exception as e:
+                        print(f"Erreur d'envoi au serveur esclave : {e}")
+                        conn.send("Serveur Java non disponible".encode())
                 else:
                     self.output.append("Aucun serveur Java connecté, compilation du code impossible")
                     print("Aucun serveur Java connecté")
+                    conn.send("Aucun serveur Java connecté".encode())
         except Exception as e:
             print(f"Erreur d'envoi au serveur esclave : {e}")
             conn.send("Erreur d'envoi au serveur esclave".encode())

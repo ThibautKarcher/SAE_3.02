@@ -13,7 +13,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Test")
         self.resize(900, 600)
         self.setCentralWidget(widget)
-        widget.setStyleSheet(Path('style.css').read_text())
+        widget.setStyleSheet(Path('style.qss').read_text())
 
         self.host_label = QLabel("Serveur :")
         self.host_value = QLineEdit("")
@@ -91,9 +91,13 @@ class MainWindow(QMainWindow):
         if self.conn.isChecked():
             self.conn.setText("Déconnexion")
             self.connexion()
-            self.port_value.setReadOnly(False)
-            self.host_value.setReadOnly(False)
-            self.close_button.setEnabled(True)
+            if self.connecté:
+                self.port_value.setReadOnly(False)
+                self.host_value.setReadOnly(False)
+                self.close_button.setEnabled(True)
+            else:
+                self.conn.setText("Connexion")
+                self.conn.setChecked(False)
         else:
             self.conn.setText("Connexion")
             self.deconnexion()
@@ -113,18 +117,22 @@ class MainWindow(QMainWindow):
             self.client_socket = socket.socket()
             self.client_socket.connect((self.host_value.text(), port))
             self.conn_state.setText("Connexion réussie")
-            self.conn_state.setStyleSheet("color: #01C38D")            
+            self.conn_state.setStyleSheet("color: #01C38D")
+            self.connecté = True         
         except ValueError:
             self.conn_state.setText("Le port doit être un nombre")
             self.conn_state.setStyleSheet("color: red")
+            self.connecté = False
             return
         except ConnectionRefusedError:
             self.conn_state.setText("Connexion refusée")
             self.conn_state.setStyleSheet("color: red")
+            self.connecté = False
         except Exception as e:
             print(f"Erreur de connexion : {e}")
             self.conn_state.setText("Connexion échouée")
             self.conn_state.setStyleSheet("color: red")
+            self.connecté = False
 
     def detect_language(self, message):
         message = self.code_input.toPlainText()
@@ -184,15 +192,22 @@ class MainWindow(QMainWindow):
                 break
 
     def deconnexion(self):
-        message_fin_conn = "fin"
-        self.client_socket.send(message_fin_conn.encode())
-        if self.client_socket.recv(1024).decode() == "ok, fin":
-            self.client_socket.close()
-            self.conn_state.setText("Déconnecté")
+        try:
+            message_fin_conn = "fin"
+            self.client_socket.send(message_fin_conn.encode())
+            if self.client_socket.recv(1024).decode() == "ok, fin":
+                self.client_socket.close()
+                self.conn_state.setText("Déconnecté")
+                self.conn_state.setStyleSheet("color: red")
+            else:
+                self.conn_state.setText("Erreur lors de la déconnexion")
+                self.conn_state.setStyleSheet("color: red")
+        except OSError:
+            self.conn_state.setText("Erreur lors de la déconnexion, problème de socket")
             self.conn_state.setStyleSheet("color: red")
-        else:
-            self.conn_state.setText("Erreur lors de la déconnexion")
-            self.conn_state.setStyleSheet("color: red")
+        except Exception as e:
+            print(f"Erreur lors de la déconnexion : {e}")
+            self.conn_state.setText(f"Erreur lors de la déconnexion : {e}")
         
 
 if __name__ == "__main__":

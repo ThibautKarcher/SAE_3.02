@@ -1,4 +1,0 @@
-Serveur C : 192.168.1.2
-Serveur C++ : 192.168.1.2
-Serveur Java : 192.168.1.22
-Serveur Python : 192.168.1.2
