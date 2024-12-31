@@ -1,4 +1,3 @@
-import sys
 import socket
 import threading
 import re
@@ -6,6 +5,11 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 
 class MainWindow(QMainWindow):
+    ''' 
+    Méthode d'initialisation de la fenêtre principale 
+    contient l'ensemble des widgets de la fenêtre ainsi que leur position
+    cette méthode permet aussi d'associer les boutons à leur méthode associés
+    '''
     def __init__(self):
         self.nbr_client = 0
         super().__init__()
@@ -51,7 +55,7 @@ class MainWindow(QMainWindow):
 
     def demarrage(self):
         try:   
-            self.connect.setText('Arrêt du serveur')
+            self.connect.setEnabled(False)
             self.serv_state.setText('Serveur ON')
             self.connect.clicked.connect(self.deconnexion)
             port = int(self.port_value.text())
@@ -95,17 +99,14 @@ class MainWindow(QMainWindow):
                 pass
             if addr == match_addr:
                 recherche_language_serv = re.findall(r"Serveur (.*)\s\:[ ]?(.*[.].[0-9]*)", lecture)
-                print(recherche_language_serv)
                 language_serv = ""
                 for lang, ip in recherche_language_serv:
                     if ip == addr:
                         language_serv = lang
                         break
-                print(language_serv)
                 self.slave_list.addItem(f"Serveur {language_serv} : {addr} connecté")
                 if language_serv == "C":
                     self.serv_C = conn
-                    print(self.serv_C)
                 else :
                     self.serv_C = None
                 if language_serv == "Java":
@@ -118,7 +119,6 @@ class MainWindow(QMainWindow):
                     self.serv_Cpp = None
                 if language_serv == "Python":
                     self.serv_Python = conn
-                    print(self.serv_Python)
                 else :
                     self.serv_Python = None
                 self.host = "Serveur"
@@ -128,7 +128,6 @@ class MainWindow(QMainWindow):
                 self.host_list.addItem(f"Client{self.nbr_client} : {addr} connecté")
                 self.host_value.setText(str(self.nbr_client))
                 self.host_pos_in_list = self.host_list.findItems(f"Client{self.nbr_client} : {addr} connecté", Qt.MatchFlag.MatchExactly)[0]
-                print(self.host_pos_in_list)
                 self.host = "Client"
         print(f"Nature de l'équipement ayant l'adresse {address} : {self.host}")
         MainWindow.reception(self, conn, address)
@@ -149,7 +148,7 @@ class MainWindow(QMainWindow):
                             #conn.close()
                             self.nbr_client -= 1
                             self.host_list.takeItem(self.host_list.row(self.host_pos_in_list))      #https://stackoverflow.com/questions/23835847/how-to-remove-item-from-qlistwidget
-                            break                                                                   #reste quelques problèmes avec suppression de l'item dans la liste
+                            break
                         else:
                             MainWindow.definir_language(self, message, conn, address)
                 except Exception as e:
@@ -175,14 +174,8 @@ class MainWindow(QMainWindow):
         MainWindow.send_to_slave(self, message, language, conn, address)
 
     def send_to_slave(self, message, language, conn, address):
-        print("send to slave")
-        print(language)
-        print(message)
-        print("end send to slave")
         try:
             if language == "Python":
-                print("Envoi du code Python")
-                print(self.serv_Python)
                 if self.serv_Python:
                     try:
                         self.serv_Python.send(message.encode())
@@ -199,8 +192,6 @@ class MainWindow(QMainWindow):
                     print("Aucun serveur Python connecté")
                     conn.send("Aucun serveur Python connecté".encode())
             elif language == "C":
-                print("Envoi du code C")
-                print(self.serv_C)
                 if self.serv_C:
                     try:
                         self.serv_C.send(message.encode())
@@ -217,8 +208,6 @@ class MainWindow(QMainWindow):
                     print("Aucun serveur C connecté")
                     conn.send("Aucun serveur C connecté".encode())
             elif language == "C++":
-                print("Envoi du code C++")
-                print(self.serv_Cpp)
                 if self.serv_Cpp:
                     try:
                         self.serv_Cpp.send(message.encode())
@@ -235,8 +224,6 @@ class MainWindow(QMainWindow):
                     print("Aucun serveur C++ connecté")
                     conn.send("Aucun serveur C++ connecté".encode())
             elif language == "Java":
-                print("Envoi du code Java")
-                print(self.serv_Java)
                 if self.serv_Java:
                     try:
                         self.serv_Java.send(message.encode())
@@ -257,9 +244,6 @@ class MainWindow(QMainWindow):
             conn.send("Erreur d'envoi au serveur esclave".encode())
 
     def send_result_to_client(self, message, conn, address):
-        print("Envoi du résultat au client :")
-        print(message)
-        print(address)
         try:
             conn.send(message.encode())
             print(f"Message envoyé au client : {message}")

@@ -136,71 +136,45 @@ class MainWindow(QMainWindow):
     def compilation(self, code):
         try:
             if self.lang_slave_value.currentText() == "Python":
-                print("compilation python")
                 with open('code.py', 'w') as code_fichier:
                     code_fichier.write(code)
                 resultat = subprocess.run([sys.executable, 'code.py'], capture_output=True, text=True)
-                print(resultat)
                 if resultat.stderr == "":
-                    print(resultat.stdout)
                     result = resultat.stdout
-                    print("Résultat compilé")
                 else:
-                    print(resultat.stderr)
                     result = resultat.stderr
-                    print("Erreur de compilation")
             elif self.lang_slave_value.currentText() == "C":
-                print("compilation C")
                 with open('code.c','w') as code_fichier:
                     code_fichier.write(code)                                    #https://stackoverflow.com/questions/76090257/run-c-file-with-input-from-file-in-python-subprocess-library
                 subprocess.run('gcc -o code code.c', shell=True)
                 resultat = subprocess.run(['./code'], capture_output=True, text=True)
-                print(resultat)
                 if resultat.stderr == "":
-                    print(resultat.stdout)
                     result = resultat.stdout
-                    print("Résultat compilé")
                 else:
-                    print(resultat.stderr)
                     result = resultat.stderr
-                    print("Erreur de compilation")
             elif self.lang_slave_value.currentText() == "C++":
-                print("compilation C++")
                 with open('code.cpp','w') as code_fichier:
                     code_fichier.write(code)
                 subprocess.run('g++ -o code code.cpp', shell=True)
                 resultat = subprocess.run(['./code'], capture_output=True, text=True)
-                print(resultat)
                 if resultat.stderr == "":
-                    print(resultat.stdout)
                     result = resultat.stdout
-                    print("Résultat compilé")
                 else:
-                    print(resultat.stderr)
                     result = resultat.stderr
-                    print("Erreur de compilation")
             elif self.lang_slave_value.currentText() == "Java":
-                print("compilation Java")
                 nom_fich = re.findall("public class (.*) {", code)
-                print(nom_fich)
                 if nom_fich != None:
                     nom_fich = nom_fich[0]
-                    print(nom_fich)
                 else:
                     nom_fich = "code"
                 with open(f'{nom_fich}.java','w') as code_fichier:
                     code_fichier.write(code)
                 subprocess.run(f'javac {nom_fich}.java', shell=True)
                 resultat = subprocess.run(['java', f'{nom_fich}'], capture_output=True, text=True)
-                print(resultat)
                 if resultat.stderr == "":
-                    print(resultat.stdout)
                     result = resultat.stdout
-                    print("Résultat compilé")
                 else:
-                    print(resultat.stderr)
                     result = resultat.stderr
-                    print("Erreur de compilation")
                 if os.path.exists(f'{nom_fich}.java'):
                     os.remove(f'{nom_fich}.java')
                 else:
@@ -212,11 +186,9 @@ class MainWindow(QMainWindow):
             print(f"Erreur de compilation : {e}")
 
     def envoi_resultat(self, code):
-        print("Envoi du résultat")
-        print(code)
         try:
             self.slave_socket.send(code.encode())
-            print("Résultat envoyé")
+            print("Résultat envoyé : ")
             print(code)
         except Exception as e:
             print(f"Erreur d'envoi du résultat : {e}")

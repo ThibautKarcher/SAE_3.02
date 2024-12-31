@@ -163,13 +163,10 @@ class MainWindow(QMainWindow):
             self.choose_lang.setCurrentText("Texte")
             self.lang_status.setText("Langage non reconnu, votre code sera traité comme du texte, changer le langage si nécessaire")
             self.lang_status.setStyleSheet("color: red")
-        print(language)
     
     
     def envoi(self, message):
         try :
-            print(self.client_socket)
-            print(type(self.client_socket))
             self.client_socket.send(message.encode())
             print(f"Message envoyé : {message}")
             MainWindow.reponse(self)
